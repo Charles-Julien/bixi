@@ -1,30 +1,89 @@
 ---
-title: "Bixi project part 2"
-author: "Charles"
-date: "2023-10-09"
+title: "Part 2: Linear regression models"
+author: "Charles Julien, Chike Odenigbo, Atul Sharma, Gabriel Jobert"
+date: "10/20/2023"
 output: github_document
 ---
+
+# Instructions
+
+• Explore linear regression models for the response variables of interest, specifically, for trip lengths (duration) and revenue.
+
+• Be sure that your analyses allow you to answer well formulated business / research questions that you wish to explore through these models. The goal is to use linear regression models to provide interesting and relevant insights from the data.
+
+• Comment on findings and discuss the main takeaways from these analyses from a business
+perspective. Be sure to provide relevant model outputs that support your discussion.
+
+• Discuss any shortcomings or limitations of the analyses carried out.
+
+
+# Business/Research questions
+
+Examples : 
+
+Are revenues significantly higher during the weekend?
+
+Does the average trip duration varies from member to non-member?
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+```{r message = FALSE, warning=FALSE, include = FALSE, echo=FALSE}
+# Import
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(leaflet)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r load_data, include=FALSE}
+# Data loading
+
+# Set working directory to file location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+df_raw = read.csv("./../src/bixi10.csv")
+df_station = read.csv("./../src/2021_stations.csv")
+df_main = left_join(df_raw,df_station,by = c("station"="pk"))
+head(df_main)
+
+```
+# Build some regression models, discuss their relevances and test assumptions
+
+```{r}
+# Chunk of code
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# Chunk of code
+```
+
+```{r}
+# Chunk of code
+```
+
+```{r}
+# Chunk of code
+```
+
+# Discuss the findings (business perspective)
+
+blablabla
+
+# Limitations and shortcomings
+
+blablabla
+
+# Contribution
+
+Charles Julien :
+
+Gabriel Jobert :
+
+Chike Odenigbo: 
+
+Atul Sharma: 

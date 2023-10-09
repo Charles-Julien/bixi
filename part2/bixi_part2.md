@@ -1,35 +1,64 @@
-Bixi project part 2
+Part 2: Linear regression models
 ================
-Charles
-2023-10-09
+Charles Julien, Chike Odenigbo, Atul Sharma, Gabriel Jobert
+10/20/2023
 
-## R Markdown
+# Instructions
 
-This is an R Markdown document. Markdown is a simple formatting syntax
-for authoring HTML, PDF, and MS Word documents. For more details on
-using R Markdown see <http://rmarkdown.rstudio.com>.
+• Explore linear regression models for the response variables of
+interest, specifically, for trip lengths (duration) and revenue.
 
-When you click the **Knit** button a document will be generated that
-includes both content as well as the output of any embedded R code
-chunks within the document. You can embed an R code chunk like this:
+• Be sure that your analyses allow you to answer well formulated
+business / research questions that you wish to explore through these
+models. The goal is to use linear regression models to provide
+interesting and relevant insights from the data.
+
+• Comment on findings and discuss the main takeaways from these analyses
+from a business perspective. Be sure to provide relevant model outputs
+that support your discussion.
+
+• Discuss any shortcomings or limitations of the analyses carried out.
+
+# Business/Research questions
+
+Examples :
+
+Are revenues significantly higher during the weekend?
+
+Does the average trip duration varies from member to non-member?
+
+# Build some regression models, discuss their relevances and test assumptions
 
 ``` r
-summary(cars)
+# Chunk of code
 ```
 
-    ##      speed           dist       
-    ##  Min.   : 4.0   Min.   :  2.00  
-    ##  1st Qu.:12.0   1st Qu.: 26.00  
-    ##  Median :15.0   Median : 36.00  
-    ##  Mean   :15.4   Mean   : 42.98  
-    ##  3rd Qu.:19.0   3rd Qu.: 56.00  
-    ##  Max.   :25.0   Max.   :120.00
+``` r
+# Chunk of code
+```
 
-## Including Plots
+``` r
+# Chunk of code
+```
 
-You can also embed plots, for example:
+``` r
+# Chunk of code
+```
 
-![](bixi_part2_files/figure-gfm/pressure-1.png)<!-- -->
+# Discuss the findings (business perspective)
 
-Note that the `echo = FALSE` parameter was added to the code chunk to
-prevent printing of the R code that generated the plot.
+blablabla
+
+# Limitations and shortcomings
+
+blablabla
+
+# Contribution
+
+Charles Julien :
+
+Gabriel Jobert :
+
+Chike Odenigbo:
+
+Atul Sharma:
