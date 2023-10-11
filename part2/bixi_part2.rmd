@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r message = FALSE, warning=FALSE, include = FALSE, echo=FALSE}
-# Import
+# Import (The fewer the better)
 
 library(tidyverse)
 library(ggplot2)
@@ -54,9 +54,45 @@ head(df_main)
 ```
 # Build some regression models, discuss their relevances and test assumptions
 
-```{r}
-# Chunk of code
+```{r echo=FALSE}
+# Data preparation and feature engineering
+
+# ? dd ?
+
+
+df_main <- df_main %>% mutate(
+              holiday = factor(holiday),
+              mem = factor(mem),
+              mm = factor(mm),
+              station = factor(station),
+              
+              #Overwrite old wday?
+              wday_ordered = factor(wday, levels = c("Monday", "Tuesday", "Wednesday",  "Thursday", "Friday", "Saturday", "Sunday"),ordered = TRUE),
+              season = ifelse((mm %in% c(12,1,2)), 'Winter',
+                       ifelse((mm %in% c(3,4,5)), 'Spring',
+                       ifelse((mm %in% c(6,7,8)), 'Summer',
+                       ifelse((mm %in% c(9,10,11)), 'Fall','No Season')))),
+              
+              rain_ind = factor(ifelse((rain != 0), 'Rain', 'NoRain')),
+              
+              rev_per_min = rev/dur,
+              rev_per_trip = rev/n_tot,
+             
+              percent_AM = n_AM/n_tot,
+              percent_PM = n_PM/n_tot,
+              
+              percent_AM_PM_delta = percent_AM - percent_PM,
+              n_AM_PM_delta = n_AM - n_PM,
+              
+              am_pm_ind = ifelse(n_AM>=n_PM, 'AM','PM'),
+                
+              wknd_ind = ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
+                        ,ifelse((wday %in% c("Friday","Monday") & holiday=='1'),'Long Weekend','Weekday')))
+        
+ 
 ```
+
+
 
 ```{r}
 # Chunk of code
