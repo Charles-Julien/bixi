@@ -57,8 +57,7 @@ head(df_main)
 ```{r echo=FALSE}
 # Data preparation and feature engineering
 
-# ? dd ?
-
+# ? dd is it a categorical variable or ordinal or else?
 
 df_main <- df_main %>% mutate(
               holiday = factor(holiday),
