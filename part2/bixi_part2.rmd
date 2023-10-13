@@ -97,7 +97,7 @@ df_main <- df_main %>% mutate(
 # Research Question 1: How do seasonal factors impact trip durations and revenue for BIXI Montréal?
 
 ## Seasonal effect on trip duration
-```{r seasonal effect on trip duration echo=FALSE}
+```{r seasonal_effect_trip_duration, echo=FALSE}
 seasonal_effect_dur_model <- lm(dur ~ mm + temp*rain, data = df_main)
 summary(seasonal_effect_dur_model)
 ```
@@ -141,7 +141,7 @@ From a business perspective, here's how you would interpret the output of the li
 4. **Operational Decisions**: If a business relies on this data, it could optimize operations based on these insights. For example, they might expect longer trips and possibly more revenue during warmer, drier months. On rainy days, they might expect shorter trips and can adjust resources and strategies accordingly.
 
 ## Seasonal effect on revenue
-```{r Seasonal effect on revenue echo=FALSE}
+```{r Seasonal_effect_revenue, echo=FALSE}
 seasonal_effect_rev_model <- lm(rev ~ mm + temp + rain, data = df_main)
 summary(seasonal_effect_rev_model)
 ```
@@ -175,14 +175,14 @@ This regression model is examining the impact of the month (`mm`), average daily
 
 
 ## residual Analysis
-```{r echo=False}
+```{r echo=FALSE}
 par(mfrow=c(1,2))  # 1 row, 2 columns
 seasonal_effect_rev_residual_qqplot = qqnorm(seasonal_effect_rev_model$residuals)
-+ qqline(seasonal_effect_rev_model$residuals)
+qqline(seasonal_effect_rev_model$residuals)
 seasonal_effect_rev_residual_hist = hist(seasonal_effect_rev_model$residuals, main="Histogram of Residuals", xlab="Residuals")
 
 seasonal_effect_dur_residual_qqplot = qqnorm(seasonal_effect_dur_model$residuals)
-+ qqline(seasonal_effect_dur_model$residuals)
+qqline(seasonal_effect_dur_model$residuals)
 seasonal_effect_dur_residual_hist = hist(seasonal_effect_dur_model$residuals, main="Histogram of Residuals", xlab="Residuals")
 
 print(seasonal_effect_rev_residual_qqplot)
@@ -205,7 +205,7 @@ The residuals are not perfectly normal. They show a positive skewness, indicatin
 
 ## Effect of daily and weekly pattern on revenue
 
-```{r Time pattern on revenue echo=FALSE}
+```{r Time_pattern_revenue, echo=FALSE}
 time_pattern_revenue_model <- lm(dur ~ dd + wday + holiday + n_AM + n_PM +n_AM*n_PM, data=df_main)
 summary(time_pattern_revenue_model)
 ```
@@ -251,7 +251,7 @@ summary(time_pattern_revenue_model)
 
 
 ## Effect of daily and weekly pattern on trip duration
-```{r Time pattern on trip duration echo=FALSE}
+```{r Time_pattern_trip_duration, echo=FALSE}
 time_pattern_dur_model <- lm(dur ~ dd + wday + holiday + n_AM + n_PM +n_AM*n_PM, data=df_main)
 summary(time_pattern_dur_model)
 ```
@@ -295,14 +295,14 @@ summary(time_pattern_dur_model)
 
 
 ## residual Analysis
-```{r echo=False}
+```{r echo=FALSE}
 par(mfrow=c(1,2))  # 1 row, 2 columns
 time_pattern_revenue_residual_qqplot = qqnorm(time_pattern_revenue_model$residuals)
-+ qqline(time_pattern_revenue_model$residuals)
+qqline(time_pattern_revenue_model$residuals)
 time_pattern_revenue_residual_hist = hist(time_pattern_revenue_model$residuals, main="Histogram of Residuals", xlab="Residuals")
 
 time_pattern_dur_residual_qqplot = qqnorm(time_pattern_dur_model$residuals)
-+ qqline(time_pattern_dur_model$residuals)
+qqline(time_pattern_dur_model$residuals)
 time_pattern_dur_residual_hist = hist(time_pattern_dur_model$residuals, main="Histogram of Residuals", xlab="Residuals")
 
 print(seasonal_effect_rev_residual_qqplot)
