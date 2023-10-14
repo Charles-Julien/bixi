@@ -326,6 +326,11 @@ summary(model_AvgDur)
 4. **Operational Strategy**: It is important to keep in mind the tradeoff between the number of trips and the average trip length. Indeed, as the number of trips increase for a given day, the average trip length decreases. This may suggest that the additional trips during those days are short haul.
 
 
+```{r , echo=FALSE}
+res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residuals")
+res
+```
+
 
 blablabla
 
