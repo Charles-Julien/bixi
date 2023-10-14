@@ -76,6 +76,13 @@ df_main <- df_main %>% mutate(
               
               rain_ind = factor(ifelse((rain != 0), 'Rain', 'NoRain')),
               
+              # Compared to Parc Lafontaine 
+              North_South = factor(ifelse(latitude>45.5271, 'North', 'South')),
+              West_East = factor(ifelse(longitude>-73.5705, 'East', 'West')),
+              
+              # Beginning of month versus end of month
+              PartOfMonth = factor(ifelse(dd>15, 'EOM', 'BOM')),
+              
               rev_per_min = rev/dur,
               rev_per_trip = rev/n_tot,
              
@@ -86,13 +93,16 @@ df_main <- df_main %>% mutate(
               n_AM_PM_delta = n_AM - n_PM,
               
               am_pm_ind = ifelse(n_AM>=n_PM, 'AM','PM'),
+              
+              wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
+                        ,'Weekday')),
                 
-              wknd_ind = ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
-                        ,ifelse((wday %in% c("Friday","Monday") & holiday=='1'),'Long Weekend','Weekday')))
+              lomg_wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
+                        ,ifelse((wday %in% c("Friday","Monday") & holiday=='1'),'Long Weekend','Weekday'))))
         
  
 ```
-
+df_main$category <- ifelse(df_main$latitude < median_latitude, "North Departure", "South Departure")
 
 # Research Question 1: How do seasonal factors impact trip durations and revenue for BIXI Montréal?
 
@@ -327,6 +337,53 @@ print(seasonal_effect_dur_residual_hist)
 - The presence of outliers or extreme values, as indicated by the tails in the histogram and the deviations in the Q-Q plot, might influence the regression results. These influential observations could distort the regression coefficients and reduce the precision of predictions.
 
 - The existence of outliers suggests that it might be beneficial to investigate these specific data points further to determine if they're genuine observations or potential errors. If they're genuine, one might consider robust regression techniques or transformations to minimize their influence.
+
+
+# Research Question 3: What variables impact the average bixi trip duration?
+The idea is to identify the driving factors of a bixi trip length when we control for most of the variables. 
+
+Average trip duration for members is a good proxy for the revenue they would bring if they were non-members.
+
+Variables that make business sense to include:
+
+From our seasonality analysis we identified:
+- Season (season)
+- Temperature in degrees celcius (temp)
+- Rainfall in mm (rain)
+
+From our daily and weekly pattern analysis we identified:
+- Part of the week i.e. weekend or weekday (wknd_ind)
+- If it is a holiday (holiday)
+
+Some other variables that are interesting:
+- If the user is a member (mem)
+- Location of the bixi station compared to Parc Lafontaine (North_South) and (West_East)
+- Proportion of trips in the morning versus the whole day (percent_AM)
+- total number of trips (n_tot)
+
+Interactions:
+In our EDA we observed a different week day usage of the member and non members, thus an interaction term between members and day of week would be interesting. (wday*mem).
+
+```{r , echo=FALSE}
+model_AvgDur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + n_tot + percent_AM, data = df_main)
+summary(model_AvgDur)
+```
+**Overall Model**
+- The model explains approximately 12.52% of the variation in the average trip duration.
+ which means that other factors are also at play and not included in the model.
+
+**Intercept**
+- The interpretation of the intercept does not make sense in this case since the number of trips would have to be zero. 
+
+**Coefficients**
+- **Season**: The reference level is fall. We can see that on average trip duration during spring and summer are respectively 2.33 and 0.38 minutes longer than in fall holding everything else constant. 
+
+- **Temperature**: The coefficient of temperature is 0.14 which means that an increase in temperature of 1 degree celcius corresponds to an increase of average trip duration of 0.14 minutes on average holding all else constant.
+
+- **Rainfall**: The coefficient for rain is -0.12 which means that an increase in rainfall of 1 mm corresponds to a decrease of average trip duration of 0.12 minutes on average holding all else constant.
+
+- **The main effect of Weekend Indicator**: The coefficient for weekend indicator is 2.64 which means that during the weekend, the average trip duration is 2.64 minutes higher on average than during the week, holding all else constant.
+
 
 
 # Discuss the findings (business perspective)
