@@ -41,10 +41,6 @@ Does the average trip duration varies from member to non-member?
 # Chunk of code
 ```
 
-``` r
-# Chunk of code
-```
-
 # Discuss the findings (business perspective)
 
 blablabla

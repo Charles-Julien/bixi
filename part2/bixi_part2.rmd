@@ -114,14 +114,14 @@ From a business perspective, here's how you would interpret the output of the li
    - **Month (`mm`)**: Compared to April :
      - Trips in May (`mm5`) are on average 76.5 minutes longer.
      - Trips in June are approximately 91.8 minutes longer.
-     - July sees the most significant increase with trips being about 117.7 minutes longer.
+     - July sees the most significant increase with trips being about 117.7 minutes longer. (what about september?)
      - This trend decreases a bit in August with an increase of 101.2 minutes.
-     - September trips are approximately 134.2 units minutes.
-     - The effect diminishes in the later months with October seeing an increase of just 38.8 minutes and November just 18.8 minutes. However, note that the coefficient for November is not statistically significant (p-value > 0.05).
+     - September trips are approximately 134.2 units minutes. (more than september)
+     - The effect diminishes in the later months with October seeing an increase of just 38.8 minutes and November just 18.8 minutes. However, note that the coefficient for November is not statistically significant (p-value > 0.05). Thus the effect of seasonality is similar to april.
      
-   - **Temperature (`temp`)**: For each additional degree Celsius in temperature, trip duration increases by around 4.16 minutes, all else being equal.
+   - **Temperature (`temp`)**: For each additional degree Celsius in temperature, trip duration increases by around 4.16 minutes on average, all else being equal.
    
-   - **Rainfall (`rain`)**: For each additional millimeter of rain, trip duration decreases by approximately 3.65 minutes. All else being equal. This might suggest that people tend to shorten their trips when it rains.
+   - **Rainfall (`rain`)**: For each additional millimeter of rain,average trip duration decreases by approximately 3.65 minutes. All else being equal. This might suggest that people tend to shorten their trips when it rains.
    
    - **Interaction Term (`temp:rain`)**: The interaction term is not statistically significant (p-value > 0.05), which means that the combined effect of temperature and rainfall on trip duration is not distinctly different from the sum of their individual effects.
 
