@@ -326,11 +326,37 @@ summary(model_AvgDur)
 4. **Operational Strategy**: It is important to keep in mind the tradeoff between the number of trips and the average trip length. Indeed, as the number of trips increase for a given day, the average trip length decreases. This may suggest that the additional trips during those days are short haul.
 
 
+### Verificaiton of Normality of Residuals
 ```{r , echo=FALSE}
 res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residuals")
 res
 ```
 
+### Verificaiton of Heteroscedasticity
+```{r , echo=FALSE}
+residuals_df <- data.frame(df_main, residuals = residuals(model_AvgDur))
+
+
+library(gridExtra)
+p1 <- ggplot(data = residuals_df, aes(x = temp, y = residuals)) +
+  geom_point() +
+  labs(x = "temp", y = "Residuals")
+
+p2 <- ggplot(data = residuals_df, aes(x = rain, y = residuals)) +
+  geom_point() +
+  labs(x = "rain", y = "Residuals")
+
+p3 <- ggplot(data = residuals_df, aes(x = n_tot, y = residuals)) +
+  geom_point() +
+  labs(x = "n_tot", y = "Residuals")
+
+p4 <- ggplot(data = residuals_df, aes(x = percent_AM, y = residuals)) +
+  geom_point() +
+  labs(x = "percent_AM", y = "Residuals")
+
+grid.arrange(p1, p2, p3, p4, ncol=2)
+
+```
 
 blablabla
 
