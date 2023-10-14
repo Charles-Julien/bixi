@@ -297,13 +297,35 @@ summary(model_AvgDur)
 
 - **Rainfall**: The coefficient for rain is -0.12 which means that an increase in rainfall of 1 mm corresponds to a decrease of average trip duration of 0.12 minutes on average holding all else constant.
 
-- **The main effect of Weekend Indicator**: The coefficient for weekend indicator is 2.64 which means that during the weekend, the average trip duration is 2.64 minutes higher on average than during the week, holding all else constant.
+- **Effect of Weekend Indicator and membership**: Since there exists an interaction between both variables, it is no longer possible to interpret one without the other. This implies that the relation between average trip duration and membership is different depending on the moment of the week. The opposite is also true, the relation between average trip duration and the moment of the week is different depending on the membership status.
+
+ - Weekend indicator's coefficient 2.638923 is the average difference between average trip duration during weekend and weekday for non-members. In other words, for non-members, average trip duration is higher on average than for members holding all else constant.
+ 
+- Membership's coefficient -0.385385 is the average difference between average trip duration for members and non-members for weekdays. In other words, during weekdays, the average trip duration is shorter on average for members than for non-members holding all else constant.
+
+- Interaction term's coefficient -1.868383 is ... 
+
+- **Holiday**: The coefficient for holiday is 1.069557 which means that during holidays  average trip duration is 1.069 minutes higher on average than during non-holidays, holding all else constant.
+
+- **North_South and West_East**: Their coefficients are 0.35 and -0.23 which means that on average the average trip duration for trips starting at a station South of Parc Lafontaine or West is 0.35 and -0.23 minutes different from their counter parts respectively, holding all else constant.
 
 
+- **Total number of trips**: The coefficient is -0.055315 which means that on average as number of trips increase, the average trip length in minutes decreases, holding all else constant.
 
-=======
->>>>>>> 70751d4852fae3937aada5ef03853e4e2dc7374d
-# Discuss the findings (business perspective)
+- **Percent AM**: The magnitude of the coefficient -2.351044 is less important than its sign for our interpretation. What it means is that as the proportion of trips in the morning increases, the average trip duration generally decreases when holding all else constant. This hints that trips in the morning might be shorter on average than trip in the afternoon, hence bring in less revenue.
+
+
+**Business Implications**:
+
+1. **Promotion and Marketing**: For the same temperature, average trip length tends to be the longest in spring.  This indicates that users are eager to use bikes after winter. This insight could be used for promotion purposes.
+
+2. **Resource Allocation**: Expect longer trips when it is hot and non-rainy outside. Even more if it is a weekend or holiday. Also, bikes tend to be borrowed longer during the afternoon than in the morning. Stations south of Parc Lafontaine have on average longer trip duration, which may suggests that stations are further from one another. There might be some space for additional stations.
+
+3. **Pricing Strategy**: The usage that is associated with the longest trip length based on our interaction term is for non-members during the weekend. Charging a heftier price for these people at that time may increase profit margins significantly.
+
+4. **Operational Strategy**: It is important to keep in mind the tradeoff between the number of trips and the average trip length. Indeed, as the number of trips increase for a given day, the average trip length decreases. This may suggest that the additional trips during those days are short haul.
+
+
 
 blablabla
 
