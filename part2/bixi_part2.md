@@ -23,13 +23,34 @@ that support your discussion.
 
 Examples :
 
-Are revenues significantly higher during the weekend?
+## Revenue
+
+Is revenue significantly higher during the weekend?
+
+Is revenue significantly higher during long weekend (holiday on Friday
+and/ or Monday)?
+
+Is revenue significantly different during AM, PM and night?
+
+Is revenue significantly different when it is hot or cold?
+
+Is revenue significantly higher when it is raining?
+
+## Duration
 
 Does the average trip duration varies from member to non-member?
 
-# Build some regression models, discuss their relevances and test assumptions
+How does temperature impact the trip duration? We can make is
+categorical( Cold, Normal and hot)
 
+<<<<<<< HEAD
+How does rain impact the trip duration? We can make is categorical(
+Rain, No Rain)
+
+# Build some regression models, discuss their relevances and test assumptions
+=======
 # Research Question 1: How do seasonal factors impact trip durations and revenue for BIXI Montréal?
+>>>>>>> 1a3dfe01d7c34b92d84987062663cdae9b23e77b
 
 ## Seasonal effect on trip duration
 
