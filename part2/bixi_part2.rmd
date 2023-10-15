@@ -105,6 +105,7 @@ library(dplyr)
 library(leaflet)
 library(gridExtra)
 library(broom)
+library(stats)
 ```
 
 ```{r load_data, include=FALSE}
@@ -537,8 +538,30 @@ head(model.diag.metrics)
 ```
 
 ```{r}
+# OUTLIERS  WITH COOKS DISTANCE
 model.diag.metrics %>%
   top_n(3, wt = .cooksd)
+```
+
+```{r} # THERE SEEMS TO BE AUTOCORRELATION IN THE DATA, WE SHOULD CONCLUDE TO TEST OUT LINEAR MIXED MODELS ON THE DATA}
+acf(model$residuals, type = "correlation")
+```
+
+```{r} # THERE IS NO AUTOCORRELATION IN THE DATA}
+#install.packages('lmtest')
+library(lmtest)
+lmtest::dwtest(model)
+```
+
+```{r} # SINCE DATA IS AUTOCORRELATION LONGITUDINAL MODEL MIGHT BE BEST}
+lmtest::bgtest(model, order = 3)
+```
+
+```{r}
+library(car)
+
+#perform Durbin-Watson test
+durbinWatsonTest(model)
 ```
 
 ```{r}
