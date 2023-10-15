@@ -352,7 +352,7 @@ a problem because the sample is large enough.
 ## Effect of daily and weekly pattern on revenue (duration is the target variable in the lm)
 
 ```{r Time_pattern_revenue, echo=FALSE}
-time_pattern_revenue_model <- lm(dur ~ dd + wday + holiday + n_AM + n_PM +n_AM*n_PM, data=df_main)
+time_pattern_revenue_model <- lm(rev ~ dd + wday + holiday + n_AM + n_PM +n_AM*n_PM, data=df_main)
 summary(time_pattern_revenue_model)
 ```
 
