@@ -151,18 +151,20 @@ value with caution.
     significant (p-value \> 0.05).
 
 - **Temperature (`temp`)**: For each additional degree Celsius in
-  temperature, trip duration increases by around 4.16 minutes, all else
-  being equal.
+  temperature, trip duration increases by around 4.16 minutes on
+  average, all else being equal.
 
 - **Rainfall (`rain`)**: For each additional millimeter of rain, trip
-  duration decreases by approximately 3.65 minutes. All else being
-  equal. This might suggest that people tend to shorten their trips when
-  it rains.
+  duration decreases by approximately 3.65 minutes on average. All else
+  being equal. This might suggest that people tend to shorten their
+  trips when it rains or that there are less trips and will require
+  further investigation.
 
 - **Interaction Term (`temp:rain`)**: The interaction term is not
   statistically significant (p-value \> 0.05), which means that the
   combined effect of temperature and rainfall on trip duration is not
-  distinctly different from the sum of their individual effects.
+  distinctly different from the sum of their individual effects. How to
+  interpret
 
 **Model Fit**: - The **Multiple R-squared** value is 0.04691, which
 means that only about 4.69% of the variance in trip duration can be
@@ -297,33 +299,29 @@ a problem because the sample is large enough.
 
     ## 
     ## Call:
-    ## lm(formula = dur ~ dd + wday + holiday + n_AM + n_PM + n_AM * 
-    ##     n_PM, data = df_main)
+    ## lm(formula = dur ~ dd + wday + holiday, data = df_main)
     ## 
     ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -1085.87   -44.46    -8.88    32.17  2299.39 
+    ##    Min     1Q Median     3Q    Max 
+    ## -330.0 -201.4 -101.5   96.4 3953.1 
     ## 
     ## Coefficients:
-    ##                 Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)    30.770092   3.688401   8.342  < 2e-16 ***
-    ## dd             -0.068808   0.126157  -0.545  0.58548    
-    ## wdayMonday    -27.967133   4.166831  -6.712 2.03e-11 ***
-    ## wdaySaturday   29.102294   4.086573   7.121 1.14e-12 ***
-    ## wdaySunday     11.197715   4.116155   2.720  0.00653 ** 
-    ## wdayThursday  -11.920230   4.143795  -2.877  0.00403 ** 
-    ## wdayTuesday   -29.246774   4.164437  -7.023 2.31e-12 ***
-    ## wdayWednesday -18.285884   4.133963  -4.423 9.82e-06 ***
-    ## holiday1       56.235008   7.609070   7.391 1.58e-13 ***
-    ## n_AM            8.514027   0.345613  24.635  < 2e-16 ***
-    ## n_PM           19.121895   0.145336 131.570  < 2e-16 ***
-    ## n_AM:n_PM      -0.092015   0.006692 -13.750  < 2e-16 ***
+    ##                Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)   284.97626    9.71890  29.322  < 2e-16 ***
+    ## dd              0.03792    0.35263   0.108   0.9144    
+    ## wdayMonday    -49.00428   11.63373  -4.212 2.55e-05 ***
+    ## wdaySaturday   15.05883   11.40702   1.320   0.1868    
+    ## wdaySunday     -6.50623   11.48715  -0.566   0.5711    
+    ## wdayThursday  -16.94467   11.56156  -1.466   0.1428    
+    ## wdayTuesday   -34.48313   11.61775  -2.968   0.0030 ** 
+    ## wdayWednesday -20.56897   11.53032  -1.784   0.0745 .  
+    ## holiday1       68.77802   21.23112   3.239   0.0012 ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 109.8 on 9988 degrees of freedom
-    ## Multiple R-squared:  0.8727, Adjusted R-squared:  0.8725 
-    ## F-statistic:  6223 on 11 and 9988 DF,  p-value: < 2.2e-16
+    ## Residual standard error: 307 on 9991 degrees of freedom
+    ## Multiple R-squared:  0.00463,    Adjusted R-squared:  0.003833 
+    ## F-statistic: 5.809 on 8 and 9991 DF,  p-value: 2.016e-07
 
 **Overall Model** (the above model is not the one described below)
 
@@ -404,33 +402,34 @@ statistically significant (p = 0.54263).
 
     ## 
     ## Call:
-    ## lm(formula = dur ~ dd + wday + holiday + n_AM + n_PM + n_AM * 
+    ## lm(formula = rev ~ dd + wday + holiday + n_AM + n_PM + n_AM * 
     ##     n_PM, data = df_main)
     ## 
     ## Residuals:
-    ##      Min       1Q   Median       3Q      Max 
-    ## -1085.87   -44.46    -8.88    32.17  2299.39 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -83.572  -5.805  -1.148   4.221 200.512 
     ## 
     ## Coefficients:
-    ##                 Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)    30.770092   3.688401   8.342  < 2e-16 ***
-    ## dd             -0.068808   0.126157  -0.545  0.58548    
-    ## wdayMonday    -27.967133   4.166831  -6.712 2.03e-11 ***
-    ## wdaySaturday   29.102294   4.086573   7.121 1.14e-12 ***
-    ## wdaySunday     11.197715   4.116155   2.720  0.00653 ** 
-    ## wdayThursday  -11.920230   4.143795  -2.877  0.00403 ** 
-    ## wdayTuesday   -29.246774   4.164437  -7.023 2.31e-12 ***
-    ## wdayWednesday -18.285884   4.133963  -4.423 9.82e-06 ***
-    ## holiday1       56.235008   7.609070   7.391 1.58e-13 ***
-    ## n_AM            8.514027   0.345613  24.635  < 2e-16 ***
-    ## n_PM           19.121895   0.145336 131.570  < 2e-16 ***
-    ## n_AM:n_PM      -0.092015   0.006692 -13.750  < 2e-16 ***
+    ##                Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)    1.845262   0.626180   2.947  0.00323 ** 
+    ## dd             0.012990   0.021333   0.609  0.54263    
+    ## wdayMonday    -2.808496   0.712388  -3.942 8.18e-05 ***
+    ## wdaySaturday   1.928992   0.680213   2.836  0.00459 ** 
+    ## wdaySunday     0.612228   0.697599   0.878  0.38019    
+    ## wdayThursday  -2.629589   0.708936  -3.709  0.00021 ***
+    ## wdayTuesday   -4.330335   0.707941  -6.117 1.03e-09 ***
+    ## wdayWednesday -3.134529   0.697203  -4.496 7.09e-06 ***
+    ## holiday1       5.776485   1.266565   4.561 5.23e-06 ***
+    ## n_AM           2.958747   0.141375  20.928  < 2e-16 ***
+    ## n_PM           5.502754   0.047003 117.072  < 2e-16 ***
+    ## n_AM:n_PM      0.103572   0.005671  18.263  < 2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 109.8 on 9988 degrees of freedom
-    ## Multiple R-squared:  0.8727, Adjusted R-squared:  0.8725 
-    ## F-statistic:  6223 on 11 and 9988 DF,  p-value: < 2.2e-16
+    ## Residual standard error: 12.79 on 4722 degrees of freedom
+    ##   (5266 observations deleted due to missingness)
+    ## Multiple R-squared:  0.8787, Adjusted R-squared:  0.8784 
+    ## F-statistic:  3109 on 11 and 4722 DF,  p-value: < 2.2e-16
 
 **Overall Model** - The model explains approximately 87.27% of the
 variation in the trip duration. - The model is statistically significant
@@ -497,6 +496,141 @@ although this effect is not statistically significant (p = 0.58548).
     congestion or users taking shorter trips when they notice many bikes
     are in use.
 
+# Is revenue significantly higher during the weekend?
+
+\#We want to check if for non-member the revenue generated is
+significantly higher during weekend as compared to weekdays.
+
+### Findings and interpretation
+
+**Model Overview**: The model is trying to observe the effect of day of
+the week (`wday`) categorised as weekend and weekdays on the revenue
+(`rev`).
+
+**Coefficients**: - **(Intercept)**: The base revenue is approximately
+24 for weekdays.
+
+      - **weekend (`category of wday`)**: Trips in weekend generate on average 12.8 higher revenue as compared to "Weekday" (the reference category). The difference is statistically significant (p-value < 0.05),
+
+**Model Fit**: - The **Multiple R-squared** value is 0.02563, which
+means that only about 2.56 % of the variance in revenue can be explained
+by the model. This is a pretty low value, suggesting that there may be
+other factors not considered in the model that influence trip duration.
+
+- The overall **F-statistic** of 125.5 with (df 1,df2: 4732) ,has a very
+  low p-value (p \< 2.2e-16), indicating that the model is statistically
+  significant and that of the predictors has a relationship with
+  revenue.
+
+**Business Implications**:
+
+1.  **Spike**: There is 50% rise in revenue during weekends as compared
+    to weekdays for non-members
+
+2.  **Model Improvements**: The low R-squared value indicates there are
+    other factors not in the model affecting trip duration. Further
+    research could help improve the predictive power of the model.
+
+3.  **Operational Decisions**: If a business relies on this data, it
+    could optimize operations based on these insights. For example, they
+    might assess if there is shortage of BIXI during weekend at certain
+    stations which might be negatively impacting revenue. Alternatively,
+    the charges may be reduced for non-members during weekdays to
+    improve BIXI usage.
+
+``` r
+non_member_data <- df_main[df_main$mem == 0, ]
+non_member_data <- non_member_data %>%
+  mutate(weekend = ifelse(wday %in% c("Saturday", "Sunday"), "Weekend", "Weekday"))
+model <- lm(rev ~ weekend, data = non_member_data)
+summary(model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = rev ~ weekend, data = non_member_data)
+    ## 
+    ## Residuals:
+    ##    Min     1Q Median     3Q    Max 
+    ## -35.53 -17.83  -8.36   7.03 779.63 
+    ## 
+    ## Coefficients:
+    ##                Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)     24.2346     0.6284   38.56   <2e-16 ***
+    ## weekendWeekend  12.8847     1.1502   11.20   <2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 36.21 on 4732 degrees of freedom
+    ## Multiple R-squared:  0.02583,    Adjusted R-squared:  0.02563 
+    ## F-statistic: 125.5 on 1 and 4732 DF,  p-value: < 2.2e-16
+
+# Research Question 1: Is there significant difference in ridership(dur) between members and non members
+
+## Trip duration and user category
+
+In this analysis, we are looking at the user category (member and
+non-members) on the trip duartion.
+
+``` r
+model_duration <- lm(avg ~ mem, data = df_main)
+summary(model_duration)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = avg ~ mem, data = df_main)
+    ## 
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -15.564  -3.747  -1.245   2.302  44.609 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept) 16.58042    0.09419  176.04   <2e-16 ***
+    ## mem1        -2.42244    0.12979  -18.66   <2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 6.48 on 9998 degrees of freedom
+    ## Multiple R-squared:  0.03367,    Adjusted R-squared:  0.03357 
+    ## F-statistic: 348.3 on 1 and 9998 DF,  p-value: < 2.2e-16
+
+### Findings and interpretation
+
+**Model Overview**: The model is trying to observe the effect of user
+category (`mem`) categorized as members and non-members on the duration
+(`dur`) from a station.
+
+**Coefficients**: - **(Intercept)**: The base trip duration of all trips
+starting from station in a day is 125 minutes(around 2 hours) for
+non-members.
+
+      - **Coefficient (`members category of mem`)**: The base trip duration of all trips starting from  station in a day is 277 minutes(around 4.5 hours) higher for members. The difference between the two use categories is statistically significant (p-value < 0.05),
+
+**Model Fit**: - The **Multiple R-squared** value is 0.2031 , which
+means that about 20.31 % of the variance in trip duration can be
+explained by use member ship.
+
+- The overall **F-statistic** of 2549 with (df 1,df2: 9998) ,has a very
+  low p-value (p \< 2.2e-16), indicating that the model is statistically
+  significant and that of the predictors has a relationship with
+  duration.
+
+**Business Implications**:
+
+1.  **Higher duration for members**: The duration for member is more
+    than thrice the duration for non-members. It can be assessed that if
+    it fit BIXI’s business model.
+
+2.  **Model strength**: The R-squared value indicates indicates decent
+    strength of the model.
+
+3.  **Operational Decisions**: The use of BIXI seems to be too skewed
+    between member and non-members. It may be examined if high trip
+    duration by members is leading to uavailablity of BIXI for
+    non-members.
+
 ## CHIKE
 
 Are revenues significantly higher during the weekend?
@@ -520,6 +654,161 @@ Do members prefer to travel in the morning as opposed to non-members?
 
 Do members prefer to travel in the morning as opposed to non-members?
 Also including the weekend vs weekday.
+
+``` r
+model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
+summary(model) # FOCUS ON REV/DUR
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + 
+    ##     mem, data = df_main)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -117.382   -2.083    1.433    4.928   24.147 
+    ## 
+    ## Coefficients:
+    ##                      Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)           -4.1407     0.8188  -5.057 4.33e-07 ***
+    ## long_wknd_indWeekday   1.7079     0.8182   2.087   0.0369 *  
+    ## long_wknd_indWeekend   0.4048     0.8293   0.488   0.6255    
+    ## seasonSpring          -0.1763     0.2692  -0.655   0.5126    
+    ## seasonSummer          -1.5288     0.2199  -6.951 3.86e-12 ***
+    ## rain_indRain           1.6899     0.2006   8.424  < 2e-16 ***
+    ## mem1                  -8.1851     0.1951 -41.950  < 2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 9.726 on 9993 degrees of freedom
+    ## Multiple R-squared:  0.1587, Adjusted R-squared:  0.1582 
+    ## F-statistic: 314.2 on 6 and 9993 DF,  p-value: < 2.2e-16
+
+``` r
+model.diag.metrics <- augment(model)
+head(model.diag.metrics)
+```
+
+    ## # A tibble: 6 × 11
+    ##   n_AM_PM_delta long_wknd_ind season rain_ind mem   .fitted .resid     .hat
+    ##           <int> <fct>         <chr>  <fct>    <fct>   <dbl>  <dbl>    <dbl>
+    ## 1            -1 Weekday       Spring Rain     1      -9.10    8.10 0.000798
+    ## 2            -7 Weekday       Spring NoRain   1     -10.8     3.79 0.000673
+    ## 3            -5 Weekend       Spring NoRain   0      -3.91   -1.09 0.000874
+    ## 4            -2 Weekday       Spring Rain     0      -0.919  -1.08 0.000875
+    ## 5            -6 Weekend       Spring Rain     1     -10.4     4.41 0.000979
+    ## 6             0 Weekday       Summer NoRain   0      -3.96    3.96 0.000441
+    ## # ℹ 3 more variables: .sigma <dbl>, .cooksd <dbl>, .std.resid <dbl>
+
+``` r
+# OUTLIERS  WITH COOKS DISTANCE
+model.diag.metrics %>%
+  top_n(20, wt = .cooksd)
+```
+
+    ## # A tibble: 20 × 11
+    ##    n_AM_PM_delta long_wknd_ind season rain_ind mem   .fitted .resid     .hat
+    ##            <int> <fct>         <chr>  <fct>    <fct>   <dbl>  <dbl>    <dbl>
+    ##  1           -87 Weekday       Summer Rain     1      -10.5   -76.5 0.000512
+    ##  2           -99 Weekday       Fall   Rain     1       -8.93  -90.1 0.000549
+    ##  3           -80 Weekend       Summer Rain     1      -11.8   -68.2 0.000734
+    ##  4          -112 Weekday       Summer NoRain   1      -12.1   -99.9 0.000435
+    ##  5          -115 Weekday       Fall   Rain     1       -8.93 -106.  0.000549
+    ##  6          -110 Weekday       Fall   NoRain   1      -10.6   -99.4 0.000488
+    ##  7          -128 Weekday       Fall   NoRain   1      -10.6  -117.  0.000488
+    ##  8           -80 Weekend       Fall   NoRain   1      -11.9   -68.1 0.000701
+    ##  9           -68 Weekend       Spring Rain     1      -10.4   -57.6 0.000979
+    ## 10           -92 Weekend       Fall   NoRain   1      -11.9   -80.1 0.000701
+    ## 11           -82 Weekend       Fall   NoRain   1      -11.9   -70.1 0.000701
+    ## 12           -84 Weekday       Fall   Rain     1       -8.93  -75.1 0.000549
+    ## 13           -92 Weekday       Fall   NoRain   1      -10.6   -81.4 0.000488
+    ## 14          -100 Weekday       Fall   Rain     1       -8.93  -91.1 0.000549
+    ## 15           -33 Long Weekend  Spring NoRain   1      -12.5   -20.5 0.00730 
+    ## 16           -74 Weekend       Fall   NoRain   0       -3.74  -70.3 0.000690
+    ## 17           -54 Long Weekend  Spring NoRain   0       -4.32  -49.7 0.00734 
+    ## 18           -93 Weekend       Summer NoRain   0       -5.26  -87.7 0.000639
+    ## 19           -54 Long Weekend  Fall   NoRain   1      -12.3   -41.7 0.00709 
+    ## 20           -38 Long Weekend  Spring NoRain   1      -12.5   -25.5 0.00730 
+    ## # ℹ 3 more variables: .sigma <dbl>, .cooksd <dbl>, .std.resid <dbl>
+
+``` r
+# THERE SEEMS TO BE AUTOCORRELATION IN THE DATA, WE SHOULD CONCLUDE TO TEST OUT LINEAR MIXED MODELS ON THE DATA
+acf(model$residuals, type = "correlation")
+```
+
+![](bixi_part2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+``` r
+# THERE IS NO AUTOCORRELATION IN THE DATA
+#install.packages('lmtest')
+library(lmtest)
+```
+
+    ## Warning: package 'lmtest' was built under R version 4.2.3
+
+    ## Loading required package: zoo
+
+    ## Warning: package 'zoo' was built under R version 4.2.3
+
+    ## 
+    ## Attaching package: 'zoo'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     as.Date, as.Date.numeric
+
+``` r
+lmtest::dwtest(model)
+```
+
+    ## 
+    ##  Durbin-Watson test
+    ## 
+    ## data:  model
+    ## DW = 1.1177, p-value < 2.2e-16
+    ## alternative hypothesis: true autocorrelation is greater than 0
+
+``` r
+# SINCE DATA IS AUTOCORRELATION LONGITUDINAL MODEL MIGHT BE BEST
+lmtest::bgtest(model, order = 3)
+```
+
+    ## 
+    ##  Breusch-Godfrey test for serial correlation of order up to 3
+    ## 
+    ## data:  model
+    ## LM test = 2854.7, df = 3, p-value < 2.2e-16
+
+``` r
+library(car)
+```
+
+    ## Warning: package 'car' was built under R version 4.2.3
+
+    ## Loading required package: carData
+
+    ## Warning: package 'carData' was built under R version 4.2.3
+
+    ## 
+    ## Attaching package: 'car'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     recode
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     some
+
+``` r
+#perform Durbin-Watson test
+durbinWatsonTest(model)
+```
+
+    ##  lag Autocorrelation D-W Statistic p-value
+    ##    1       0.4411039      1.117712       0
+    ##  Alternative hypothesis: rho != 0
 
 ``` r
 model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
@@ -673,9 +962,21 @@ summary(model)
     ## Multiple R-squared:  0.002469,   Adjusted R-squared:  0.001969 
     ## F-statistic: 4.946 on 5 and 9994 DF,  p-value: 0.0001588
 
+``` r
+plot(model,4)
+```
+
+![](bixi_part2_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+``` r
+plot(model,5)
+```
+
+![](bixi_part2_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
 ## residual Analysis
 
-![](bixi_part2_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](bixi_part2_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->![](bixi_part2_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
 
 **Histogram of Residuals**: - At first glance, the residuals appear to
 be roughly normally distributed as the majority of them are centered
@@ -853,11 +1154,11 @@ constant.
 
 ### Verificaiton of Normality of Residuals
 
-![](bixi_part2_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](bixi_part2_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 ### Verificaiton of Heteroscedasticity
 
-![](bixi_part2_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](bixi_part2_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 blablabla
 

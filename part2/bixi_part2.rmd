@@ -216,18 +216,20 @@ value with caution.
         statistically significant (p-value \> 0.05).
 
 -   **Temperature (`temp`)**: For each additional degree Celsius in
-    temperature, trip duration increases by around 4.16 minutes, all
-    else being equal.
+    temperature, trip duration increases by around 4.16 minutes on
+    average, all else being equal.
 
 -   **Rainfall (`rain`)**: For each additional millimeter of rain, trip
-    duration decreases by approximately 3.65 minutes. All else being
-    equal. This might suggest that people tend to shorten their trips
-    when it rains.
+    duration decreases by approximately 3.65 minutes on average. All
+    else being equal. This might suggest that people tend to shorten
+    their trips when it rains or that there are less trips and will
+    require further investigation.
 
 -   **Interaction Term (`temp:rain`)**: The interaction term is not
     statistically significant (p-value \> 0.05), which means that the
     combined effect of temperature and rainfall on trip duration is not
-    distinctly different from the sum of their individual effects.
+    distinctly different from the sum of their individual effects. How
+    to interpret
 
 **Model Fit**: - The **Multiple R-squared** value is 0.04691, which
 means that only about 4.69% of the variance in trip duration can be
@@ -267,7 +269,7 @@ trip duration.
 
 ```{r Seasonal_effect_revenue, echo=FALSE}
 seasonal_effect_rev_model <- lm(rev ~ mm + temp + rain, data = df_main)
-summary(seasonal_effect_rev_model)
+summary(seasonal_effect_rev_model) # consider using average duration due to high correlation with total duration in y variable
 ```
 
 **Objective of Analysis:** This regression model is examining the impact
@@ -327,6 +329,9 @@ seasonal_effect_dur_residual_hist = hist(seasonal_effect_dur_model$residuals, ma
 #print(seasonal_effect_rev_residual_hist)
 #print(seasonal_effect_dur_residual_qqplot)
 #print(seasonal_effect_dur_residual_hist)
+
+# CHECK FOR LACK OF NORMALITY IN QQPLOT
+# SHAPIRO-WILK TEST
 ```
 
 1.  **Histogram of Residuals**: These histograms have a clear right-skew
@@ -352,7 +357,7 @@ a problem because the sample is large enough.
 ## Effect of daily and weekly pattern on revenue (duration is the target variable in the lm)
 
 ```{r Time_pattern_revenue, echo=FALSE}
-time_pattern_revenue_model <- lm(dur ~ dd + wday + holiday + n_AM + n_PM +n_AM*n_PM, data=df_main)
+time_pattern_revenue_model <- lm(dur ~ dd + wday + holiday, data=df_main)# + n_AM + n_PM +n_AM*n_PM, data=df_main)
 summary(time_pattern_revenue_model)
 ```
 
@@ -435,7 +440,7 @@ statistically significant (p = 0.54263).
 ## Effect of daily and weekly pattern on trip duration
 
 ```{r Time_pattern_trip_duration, echo=FALSE}
-time_pattern_dur_model <- lm(dur ~ dd + wday + holiday + n_AM + n_PM +n_AM*n_PM, data=df_main) # Should we look at the interaction term here? duration is correlated to the number of trips which explains the favourable f test. Data leakage?
+time_pattern_dur_model <- lm(rev ~ dd + wday + holiday + n_AM + n_PM +n_AM*n_PM, data=df_main) # Should we look at the interaction term here? duration is correlated to the number of trips which explains the favourable f test. Data leakage?
 summary(time_pattern_dur_model)
 ```
 
@@ -508,6 +513,109 @@ although this effect is not statistically significant (p = 0.58548).
     congestion or users taking shorter trips when they notice many bikes
     are in use.
 
+# Is revenue significantly higher during the weekend?
+
+#We want to check if for non-member the revenue generated is
+significantly higher during weekend as compared to weekdays.
+
+### Findings and interpretation
+
+**Model Overview**: The model is trying to observe the effect of day of
+the week (`wday`) categorised as weekend and weekdays on the revenue
+(`rev`).
+
+**Coefficients**: - **(Intercept)**: The base revenue is approximately
+24 for weekdays.
+
+```         
+  - **weekend (`category of wday`)**: Trips in weekend generate on average 12.8 higher revenue as compared to "Weekday" (the reference category). The difference is statistically significant (p-value < 0.05),
+```
+
+**Model Fit**: - The **Multiple R-squared** value is 0.02563, which
+means that only about 2.56 % of the variance in revenue can be explained
+by the model. This is a pretty low value, suggesting that there may be
+other factors not considered in the model that influence trip duration.
+
+-   The overall **F-statistic** of 125.5 with (df 1,df2: 4732) ,has a
+    very low p-value (p \< 2.2e-16), indicating that the model is
+    statistically significant and that of the predictors has a
+    relationship with revenue.
+
+**Business Implications**:
+
+1.  **Spike**: There is 50% rise in revenue during weekends as compared
+    to weekdays for non-members
+
+2.  **Model Improvements**: The low R-squared value indicates there are
+    other factors not in the model affecting trip duration. Further
+    research could help improve the predictive power of the model.
+
+3.  **Operational Decisions**: If a business relies on this data, it
+    could optimize operations based on these insights. For example, they
+    might assess if there is shortage of BIXI during weekend at certain
+    stations which might be negatively impacting revenue. Alternatively,
+    the charges may be reduced for non-members during weekdays to
+    improve BIXI usage.
+
+```{r}
+non_member_data <- df_main[df_main$mem == 0, ]
+non_member_data <- non_member_data %>%
+  mutate(weekend = ifelse(wday %in% c("Saturday", "Sunday"), "Weekend", "Weekday"))
+model <- lm(rev ~ weekend, data = non_member_data)
+summary(model)
+```
+
+# Research Question 1: Is there significant difference in ridership(dur) between members and non members
+
+## Trip duration and user category
+
+In this analysis, we are looking at the user category (member and
+non-members) on the trip duartion.
+
+```{r}
+ 
+model_duration <- lm(avg ~ mem, data = df_main)
+summary(model_duration)
+ 
+```
+
+### Findings and interpretation
+
+**Model Overview**: The model is trying to observe the effect of user
+category (`mem`) categorized as members and non-members on the duration
+(`dur`) from a station.
+
+**Coefficients**: - **(Intercept)**: The base trip duration of all trips
+starting from station in a day is 125 minutes(around 2 hours) for
+non-members.
+
+```         
+  - **Coefficient (`members category of mem`)**: The base trip duration of all trips starting from  station in a day is 277 minutes(around 4.5 hours) higher for members. The difference between the two use categories is statistically significant (p-value < 0.05),
+```
+
+**Model Fit**: - The **Multiple R-squared** value is 0.2031 , which
+means that about 20.31 % of the variance in trip duration can be
+explained by use member ship.
+
+-   The overall **F-statistic** of 2549 with (df 1,df2: 9998) ,has a
+    very low p-value (p \< 2.2e-16), indicating that the model is
+    statistically significant and that of the predictors has a
+    relationship with duration.
+
+**Business Implications**:
+
+1.  **Higher duration for members**: The duration for member is more
+    than thrice the duration for non-members. It can be assessed that if
+    it fit BIXI's business model.
+
+2.  **Model strength**: The R-squared value indicates indicates decent
+    strength of the model.
+
+3.  **Operational Decisions**: The use of BIXI seems to be too skewed
+    between member and non-members. It may be examined if high trip
+    duration by members is leading to uavailablity of BIXI for
+    non-members.
+
 ## CHIKE
 
 Are revenues significantly higher during the weekend?
@@ -534,7 +642,7 @@ Also including the weekend vs weekday.
 
 ```{r}
 model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
-summary(model)
+summary(model) # FOCUS ON REV/DUR
 ```
 
 ```{r}
@@ -545,20 +653,23 @@ head(model.diag.metrics)
 ```{r}
 # OUTLIERS  WITH COOKS DISTANCE
 model.diag.metrics %>%
-  top_n(3, wt = .cooksd)
+  top_n(20, wt = .cooksd)
 ```
 
-```{r} # THERE SEEMS TO BE AUTOCORRELATION IN THE DATA, WE SHOULD CONCLUDE TO TEST OUT LINEAR MIXED MODELS ON THE DATA}
+```{r}
+# THERE SEEMS TO BE AUTOCORRELATION IN THE DATA, WE SHOULD CONCLUDE TO TEST OUT LINEAR MIXED MODELS ON THE DATA
 acf(model$residuals, type = "correlation")
 ```
 
-```{r} # THERE IS NO AUTOCORRELATION IN THE DATA}
+```{r}
+# THERE IS NO AUTOCORRELATION IN THE DATA
 #install.packages('lmtest')
 library(lmtest)
 lmtest::dwtest(model)
 ```
 
-```{r} # SINCE DATA IS AUTOCORRELATION LONGITUDINAL MODEL MIGHT BE BEST}
+```{r}
+# SINCE DATA IS AUTOCORRELATION LONGITUDINAL MODEL MIGHT BE BEST
 lmtest::bgtest(model, order = 3)
 ```
 
