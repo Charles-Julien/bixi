@@ -533,6 +533,11 @@ Do members prefer to travel in the morning as opposed to non-members?
 Also including the weekend vs weekday.
 
 ```{r}
+model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
+summary(model)
+```
+
+```{r}
 model.diag.metrics <- augment(model)
 head(model.diag.metrics)
 ```
