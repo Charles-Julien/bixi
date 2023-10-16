@@ -219,7 +219,7 @@ the model. While statistically significant (F-statistic p-value: \<
 2.2e-16), the model might benefit from considering additional predictors
 or non-linear effects to explain more of the variance in revenue.
 
-## Business recommendations
+## Business implications
 
 1.  **Operational Adjustments:** Given that revenue is higher in warmer
     months, consider optimizing operations for this period. This might
