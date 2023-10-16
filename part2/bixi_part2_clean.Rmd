@@ -544,6 +544,7 @@ grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
 
 # Exploratory Regression
+(I would only keep the ones that bring new information and that answer business question)
 ## AM/PM Delta
 ```{r}
 model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
@@ -601,6 +602,10 @@ plot(model,5)
     transportation disruptions can affect BIXI usage but are not
     captured in the dataset.
 -   Mention Auto-correlation (Chike)
+
+# Conclusion
+(Review the research questions that were answered)
+
 # Contribution
 
 Charles Julien :
