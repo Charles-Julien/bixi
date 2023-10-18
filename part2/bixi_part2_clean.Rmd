@@ -24,7 +24,6 @@ library(leaflet)
 library(gridExtra)
 library(broom)
 library(stats)
-library(car)
 ```
 
 ```{r load_data, include=FALSE}
@@ -65,10 +64,6 @@ df_main <- df_main %>% mutate(
               # Beginning of month versus end of month
               PartOfMonth = factor(ifelse(dd>15, 'EOM', 'BOM')),
               
-              Metro_ind = factor(ifelse(grepl("Métro", name),1,0)),
-              
-              lntot = log(n_tot),
-              
               rev_per_min = rev/dur,
               rev_per_trip = rev/n_tot,
              
@@ -95,7 +90,9 @@ df_main <- df_main %>% mutate(
 ```
 
 # Introduction
-**Unlocking the Wheels of Urban Mobility: A Data-Driven Analysis of BIXI**
+
+**Unlocking the Wheels of Urban Mobility: A Data-Driven Analysis of
+BIXI**
 
 In the fast-paced, ever-evolving landscape of urban transportation, the
 quest to create efficient and sustainable solutions for city dwellers
@@ -138,6 +135,7 @@ our data analysis, share our findings, and provide recommendations based
 on the insights gathered during this project.
 
 # Business/Research questions
+
 (keep only the ones that were answered)
 
 Do members travel more than non-members during the rain periods? (Shows
@@ -162,9 +160,8 @@ Does the average trip duration varies from member to non-member?
 How does weather interact with weekday in determining the number of
 trips?
 
-
-
 # Pre-processing
+
 ## Outlier detection
 
 ```{r}
@@ -208,14 +205,14 @@ following months, with September (`mm9`) having the most substantial
 uplift of around 18.693\$.
 
 **Temperature (`temp`):** - For every 1°C increase in temperature, the
-revenue increases by approximately 0.383 \$, which is statistically
-significant (p-value: 0.0085). - This suggests that warmer days tend to
-generate more revenue.
+revenue increases by approximately 0.383\$ on average, which is
+statistically significant (p-value: 0.0085). This suggests that warmer
+days tend to generate more revenue.
 
 **Rainfall (`rain`):** - For every additional mm of rainfall, the
-revenue decreases by approximately 0.493\$, which is statistically
-significant (p-value: 7.13e-06). - This implies that rainfall negatively
-impacts the revenue.
+revenue decreases by approximately 0.493\$ on average, which is
+statistically significant (p-value: 7.13e-06). This implies that
+rainfall negatively impacts the revenue.
 
 **Model Fit:** - The Multiple R-squared value (0.04008) implies that
 around 4% of the variation in revenue is explained by the predictors in
@@ -240,7 +237,7 @@ or non-linear effects to explain more of the variance in revenue.
 ### Normality of residuals
 
 ```{r echo=FALSE}
-par(mfrow=c(1,2))  # 1 row, 2 columns
+par(mfrow=c(1,2), pin=c(2,2))  # 1 row, 2 columns
 seasonal_effect_rev_residual_qqplot = qqnorm(seasonal_effect_rev_model$residuals)
 qqline(seasonal_effect_rev_model$residuals)
 seasonal_effect_rev_residual_hist = hist(seasonal_effect_rev_model$residuals, main="Histogram of Residuals", xlab="Residuals")
@@ -270,85 +267,47 @@ a problem because the sample is large enough.
 ## Model
 
 ```{r Time_pattern_trip_duration, echo=FALSE}
-time_pattern_dur_model <- lm(dur ~ dd + wday + holiday, data=df_main) # Should we look at the interaction term here? duration is correlated to the number of trips which explains the favourable f test. Data leakage? n_am and n_pm were removed, interpreation change need to be done
+time_pattern_dur_model <- lm(dur ~ dd + wday + holiday, data=df_main)
 summary(time_pattern_dur_model)
 ```
+
 ## Interpretation
 
-**Overall Model** - The model explains approximately 87.27% of the
-variation in the trip duration. - The model is statistically significant
-(F-statistic p-value is extremely small), suggesting that the predictors
-in the model collectively have an effect on the trip duration.
+**Overall Model** : The model explains about 20.79% of the variability
+in total rental durations. The F-statistic and its associated p-value
+confirm that the model is statistically significant and that at least
+some of the predictors have significant effects.
 
-**Intercept** - When all other variables are at their reference level
-(Friday not on a holiday), the predicted trip duration is about 30.77
-minutes on average.
+**Intercept (284.97626)***: 
+   - On an average day (specifically, a non-holiday), the expected rental duration is approximately 285 minutes.
+   - This value is statistically significant (*** p-value < 2e-16), which indicates strong evidence against the null hypothesis.
 
-**Coefficients** - **dd (Day of the Month)**: For each day later in the
-month, the trip duration decreases by about 0.0688 minutes on average,
-although this effect is not statistically significant (p = 0.58548).
+**Day of the Month (`dd`)**:
+   - For each additional day in the month, the rental duration increases by an average of 0.03792 minutes.
+   - This effect is not statistically significant (p-value = 0.9144), suggesting the day of the month might not be a meaningful predictor for the duration of BIXI bike rentals.
 
--   **wday (Weekday)**: Compared to the Friday:
+**Day of the Week (`wday`)**:
+   - Compared to Fridays:
+     - Rentals on **Mondays** are, on average, **49.00428 minutes shorter**. This is statistically significant (*** p-value = 2.55e-05).
+     - Rentals on **Saturdays** are about **15.05883 minutes longer** on average, but this is not statistically significant (p-value = 0.1868).
+     - Rentals on **Sundays** are about **6.50623 minutes shorter** on average, but this is also not statistically significant (p-value = 0.5711).
+     - Rentals on **Thursdays** are **16.94467 minutes shorter** on average, but this isn't statistically significant either (p-value = 0.1428).
+     - Rentals on **Tuesdays** are **34.48313 minutes shorter** on average, and this is statistically significant (** p-value = 0.0030).
+     - Rentals on **Wednesdays** are **20.56897 minutes shorter** on average. This result is at the borderline of significance (p-value = 0.0745).
 
-    -   **Monday**: Trips are shorter by about 27.97 minutes on average.
-    -   **Saturday**: Trips are longer by about 29.10 minutes on
-        average.
-    -   **Sunday**: Trips are longer by about 11.20 minutes on average.
-    -   **Thursday**: Trips are shorter by about 11.92 minutes on
-        average.
-    -   **Tuesday**: Trips are shorter by about 29.25 minutes on
-        average.
-    -   **Wednesday**: Trips are shorter by about 18.29 minutes on
-        average.
-    -   The coefficients for all these weekdays are statistically
-        significant.
+**Holiday (`holiday1`)**:
+   - On holidays, bike rentals are, on average, **68.77802 minutes longer** compared to non-holidays. This is statistically significant (** p-value = 0.0012), suggesting that holidays have a meaningful impact on the duration of bike rentals.
 
--   **Holiday**: On holidays, trips are on average longer by about 56.24
-    minutes compared to non-holidays. This effect is statistically
-    significant, suggesting holidays might lead to longer leisure trips
-    or normal trips to different destinations than workdays.
+**Business Takeaway**:
+BIXI bike rentals tend to be shorter on Mondays and Tuesdays compared to Fridays, and rentals on holidays are significantly longer than on non-holidays. Planning for resource allocation, marketing strategies, or promotional campaigns should consider these patterns to optimize business operations.
 
--   **n_AM (Number of Trips in the Morning)**: For each additional trip
-    in the morning, the trip duration increases by about 8.51 minutes on
-    average. This is statistically significant, implying that when there
-    are more trips in the morning, they tend to be longer.
-
--   **n_PM (Number of Trips in the Afternoon)**: For each additional
-    trip in the afternoon, the trip duration increases by about 19.12
-    minutes on average. This is statistically significant and implies
-    that afternoon trips tend to be longer.
-
--   **Interaction Term (n_AM:n_PM)**: The negative coefficient (-0.0920)
-    suggests that as the number of trips in both the morning and
-    afternoon increases, there's a slight decrease in the overall trip
-    duration. However, given the fact that the coefficient is really
-    weak, the impact will be almost imperceptible.
-
-## Business implications
-
-1.  **Promotion and Marketing**: If the bike sharing company wants to
-    run promotions, they might consider targeting days when users take
-    longer trips, like Saturdays or holidays.
-
-2.  **Resource Allocation**: Understanding that afternoon trips are
-    longer might help in resource allocation, e.g., ensuring bikes are
-    available and well-maintained for the afternoon surge.
-
-3.  **Pricing Strategy**: The company can consider dynamic pricing based
-    on the day of the week or if it's a holiday, adjusting prices for
-    longer trip durations on certain days.
-
-4.  **Operational Strategy**: The interaction term suggests that on
-    particularly busy days (both morning and afternoon), the average
-    trip duration decreases slightly. This could be due to increased
-    congestion or users taking shorter trips when they notice many bikes
-    are in use.
 
 ## Verification of assumptions
+
 ### Normality of residuals
 
 ```{r echo=FALSE}
-par(mfrow=c(1,2))  # 1 row, 2 columns
+par(mfrow=c(1,2), pin=c(2,2))  # 1 row, 2 columns
 
 time_pattern_dur_residual_qqplot = qqnorm(time_pattern_dur_model$residuals)
 qqline(time_pattern_dur_model$residuals)
@@ -356,37 +315,34 @@ time_pattern_dur_residual_hist = hist(time_pattern_dur_model$residuals, main="Hi
 
 ```
 
-**Histogram of Residuals**: - At first glance, the residuals appear to
-be roughly normally distributed as the majority of them are centered
-around zero.
+**Normal Q-Q Plot**: From the given Q-Q plot, the points deviate
+significantly from the diagonal line, especially in the tails. This
+suggests that the residuals are not normally distributed. The heavy
+tails (points deviating from the line at both ends) suggest the presence
+of potential outliers or extreme values in the residuals.
 
-**Normal Q-Q Plot**: - If the residuals were perfectly normally
-distributed, the points would lie exactly on the diagonal line. - For
-the most part, the points closely follow the lines, suggesting that the
-residuals are approximately normally distributed. - Nevertheless,
-there's a deviation from the line at both the lower and upper ends. This
-implies that there are some residuals that are more extreme than what
-we'd expect under a perfect normal distribution, indicating the presence
-of outliers or potentially heavy tails in the residual distribution.
+**Histogram of Residuals**: The histogram shows that the majority of
+residuals are clustered around zero, but there are some extreme positive
+values. This is consistent with the observation from the Q-Q plot and
+indicates a possible right-skewed distribution of residuals. In the
+context of regression, the CLT means that even if the residuals aren't
+perfectly normally distributed in the population, the sampling
+distribution of the regression coefficients will be approximately normal
+if the sample size is large enough.
 
 **Implications**:
 
--   The residuals being approximately centered around zero and their
-    near-normal distribution suggest that the model's assumption of
-    linearity and constant variance (homoscedasticity) are likely met.
-    This is good for the validity of the regression analysis.
+-   While large sample sizes can make the assumption of normality less
+    crucial, it doesn't mean analysts should ignore violations of other
+    assumptions or entirely disregard the distribution of residuals.
+    Diagnostics and plots (like Q-Q plots) still provide valuable
+    information about potential model misspecifications or the presence
+    of influential outliers.
 
--   The presence of outliers or extreme values, as indicated by the
-    tails in the histogram and the deviations in the Q-Q plot, might
-    influence the regression results. These influential observations
-    could distort the regression coefficients and reduce the precision
-    of predictions.
-
--   The existence of outliers suggests that it might be beneficial to
-    investigate these specific data points further to determine if
-    they're genuine observations or potential errors. If they're
-    genuine, one might consider robust regression techniques or
-    transformations to minimize their influence.
+-   Moreover, a large sample size can sometimes detect statistically
+    significant relationships even when they are practically
+    insignificant. So, while p-values might be small, the effect sizes
+    or coefficients might not be practically meaningful.
 
 # Research Question 3: What variables impact the average bixi trip duration?
 
@@ -400,51 +356,27 @@ would bring if they were non-members.
 
 Variables that make business sense to include:
 
-From our seasonality analysis we identified: 
-- Season (season) 
--Temperature in degrees celcius (temp) 
-- Rainfall in mm (rain)
+From our seasonality analysis we identified: - Season (season) -
+Temperature in degrees celcius (temp) - Rainfall in mm (rain)
 
-From our daily and weekly pattern analysis we identified: 
-- Part of the week i.e. weekend or weekday (wknd_ind) 
-- If it is a holiday (holiday)
+From our daily and weekly pattern analysis we identified: - Part of the
+week i.e. weekend or weekday (wknd_ind) - If it is a holiday (holiday)
 
-Some other variables that are interesting: 
-- If the user is a member (mem) 
-- Location of the bixi station compared to Parc Lafontaine (North_South) and (West_East) 
-- Proportion of trips in the morning versus the whole day (percent_AM) 
-- total number of trips (n_tot)
-- If the station is a metro station (Metro_ind)
-- If we are at the beginning of month or the end of the month (PartOfMonth)
+Some other variables that are interesting: - If the user is a member
+(mem) - Location of the bixi station compared to Parc Lafontaine
+(North_South) and (West_East) - Proportion of trips in the morning
+versus the whole day (percent_AM) - total number of trips (n_tot)
 
 Interactions: In our EDA we observed a different week day usage of the
 member and non members, thus an interaction term between members and day
 of week would be interesting. (wday\*mem).
 
-Note : By incorporating most of the important variables we increase our chance of respecting the assumption of E(e)=0.
-
-Let's take a quick look at the correlation between our numerical variables to estimate the effect of collinearity.
-```{r , echo=FALSE}
-cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
-```
-We see very low correlation between the Xs which means we should not get any problems with collinearity between our numerical variables.
-
-```{r , echo=FALSE}
-plot(df_main$n_tot, df_main$avg)  
-```
-The variable total number of trip (n_tot) has been removed from the regression because it did not pass the assuption of constant variance, making the model not correctly specified. This makes intuitive sense since as the number of trip increases, the average trip duration should converge towards the true mean.
-
 ## Model
+
 ```{r , echo=FALSE}
-model_AvgDur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + percent_AM + PartOfMonth + Metro_ind, data = df_main)
+model_AvgDur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + n_tot + percent_AM, data = df_main)
 summary(model_AvgDur)
 ```
-
-Let's use the variance inflation factor to verify for collinearity, we will use a standard threshold of 5.
-```{r , echo=FALSE}
-vif(model_AvgDur)
-```
-No major problem is detected, since the global vifs are all relatively low.
 
 ## Interpretation
 
@@ -535,12 +467,13 @@ constant.
     Indeed, as the number of trips increase for a given day, the average
     trip length decreases. This may suggest that the additional trips
     during those days are short haul.
-    
+
 ## Verification of assumptions
 
 ### Verification of Normality of Residuals
 
 ```{r, echo=FALSE}
+pin=c(2,2)
 res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residuals")
 
 ```
@@ -548,6 +481,7 @@ res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residual
 ### Verificaiton of Heteroscedasticity
 
 ```{r , echo=FALSE}
+pin=c(2,2)
 residuals_df <- data.frame(df_main, residuals = residuals(model_AvgDur))
 
 p1 <- ggplot(data = residuals_df, aes(x = temp, y = residuals)) +
@@ -558,94 +492,17 @@ p2 <- ggplot(data = residuals_df, aes(x = rain, y = residuals)) +
   geom_point() +
   labs(x = "rain", y = "Residuals")
 
-p3 <- ggplot(data = residuals_df, aes(x = lntot, y = residuals)) +
+p3 <- ggplot(data = residuals_df, aes(x = n_tot, y = residuals)) +
   geom_point() +
-  labs(x = "lntot", y = "Residuals")
+  labs(x = "n_tot", y = "Residuals")
 
 p4 <- ggplot(data = residuals_df, aes(x = percent_AM, y = residuals)) +
   geom_point() +
   labs(x = "percent_AM", y = "Residuals")
 
-grid.arrange(p1, p2, p4, ncol=2)
+grid.arrange(p1, p2, p3, p4, ncol=2)
 
 ```
-season, wknd_ind, mem, holiday, North_South, West_East, PartOfMonth, Metro_ind
-
-```{r , echo=FALSE}
-p5 <- ggplot(data = residuals_df, aes(x = season, y = residuals)) + geom_boxplot() +
-  labs(x = "season", y = "Residuals")
-
-p6 <- ggplot(data = residuals_df, aes(x = mem, y = residuals)) + geom_boxplot() +
-  labs(x = "mem", y = "Residuals")
-
-p7 <- ggplot(data = residuals_df, aes(x = holiday, y = residuals)) + geom_boxplot() +
-  labs(x = "holiday", y = "Residuals")
-
-p8 <- ggplot(data = residuals_df, aes(x = North_South, y = residuals)) + geom_boxplot() +
-  labs(x = "North_South", y = "Residuals")
-
-p9 <- ggplot(data = residuals_df, aes(x = West_East, y = residuals)) + geom_boxplot() +
-  labs(x = "West_East", y = "Residuals")
-
-p10 <- ggplot(data = residuals_df, aes(x = PartOfMonth, y = residuals)) + geom_boxplot() + labs(x = "PartOfMonth", y = "Residuals")
-
-p11 <- ggplot(data = residuals_df, aes(x = Metro_ind, y = residuals)) + geom_boxplot() + labs(x = "Metro_ind", y = "Residuals")
-
-grid.arrange(p5, p6, p7, p8, p9, p10, p11, ncol=3)
-
-```
-## Model correctly specified
-```{r , echo=FALSE}
-plot(predict(model_AvgDur), resid(model_AvgDur)) 
-```
-  
-# Exploratory Regression
-(I would only keep the ones that bring new information and that answer business question)
-## AM/PM Delta
-```{r}
-model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
-summary(model)
-```
-
-## Trip length wkday/wknd
-```{r}
-#df_main 
-# SHORTER TRIPS ON WEEKDAYS THAN WEEKENDS
-model <- lm(avg ~ long_wknd_ind + season + rain_ind + mem, data = df_main)
-summary(model)
-```
-
-## trip length for members/non-members
-```{r}
-# MEMBERS TAKE SHORTER TRIPS
-# MEMBERS TAKE LONGER TRIPS IN THE RAIN
-model <- lm(avg ~ (rain_ind *mem) + long_wknd_ind, data = df_main)
-summary(model)
-```
-
-## Revenue per trip: seasonal effect
-```{r}
-#HIGHER REVENUE PER TRIP IN SPRING AND SUMMER THAN WINTER
-model <- lm(rev_per_trip ~ long_wknd_ind + season + rain_ind, data = df_main)
-summary(model)
-```
-
-## Number of trips as season advances
-```{r}
-#df_main 
-# AS BIXI SEASON GOES ON, WEEKDAY NUMBER OF TRIPS GO UP WITH A STATISTICAL SIGNIFICANCE
-model <- lm(n_tot ~ (long_wknd_ind*week_num), data = df_main)
-summary(model)
-```
-
-```{r}
-plot(model,4)
-```
-
-```{r}
-plot(model,5)
-```
-
 
 # Limitations and shortcomings
 
@@ -660,6 +517,7 @@ plot(model,5)
 -   Mention Auto-correlation (Chike)
 
 # Conclusion
+
 (Review the research questions that were answered)
 
 # Contribution
