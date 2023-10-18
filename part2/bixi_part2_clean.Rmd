@@ -198,6 +198,13 @@ model.diag.metrics %>%
   top_n(3, wt = .cooksd)
 ```
 
+```{r}
+n <- nrow(df_main)
+cooksD <- cooks.distance(model)
+plot(cooksD, main = "Cooks Distance for Influential Obs")
+abline(h = 4/n, lty = 2, col = "steelblue") # add cutoff line
+```
+
 # Research Question 1: How do seasonal factors impact trip revenue for BIXI Montréal?
 
 ## Model
@@ -628,6 +635,76 @@ grid.arrange(p1, p2, p4, p5, p6, p7, p8, p9, p10, p11, ncol=3)
 
 No major problem of heteroscedasticity were detected. The variable
 `n_tot` has been removed as stated earlier.
+
+# Influential Observations
+
+```{r}
+layout_matrix_1 <- matrix(1:4, ncol = 2)   
+layout(layout_matrix_1)  
+n <- nrow(df_main)
+cooksD_season <- cooks.distance(seasonal_effect_rev_model)
+plot(cooksD_season, main = "Cooks Distance Seasonal Model")
+abline(h = 4/n, lty = 2, col = "red") # add cutoff line
+
+cooksD_time <- cooks.distance(time_pattern_dur_model)
+plot(cooksD_time, main = "Cooks Distance Time Pattern Model")
+abline(h = 4/n, lty = 2, col = "red") # add cutoff line
+
+cooksD_dur <- cooks.distance(model_AvgDur)
+plot(cooksD_dur, main = "Cooks Distance Duration Model")
+abline(h = 4/n, lty = 2, col = "red") # add cutoff line
+```
+
+```{r}
+par(mfrow = c(2, 2))
+plot(seasonal_effect_rev_model, main = "Seasonal Model",5)
+plot(time_pattern_dur_model, main = "Time Pattern Model",5)
+plot(model_AvgDur, main = "Duration Model",5)
+```
+
+```{r}
+summary(seasonal_effect_rev_model)
+```
+
+```{r}
+#df_main_season
+df_main
+```
+
+```{r}
+#cooksD_season 
+
+#cooksD_time 
+
+#cooksD_dur 
+
+influ_season<- cooksD_season[(cooksD_season > (3 * mean(cooksD_season, na.rm = TRUE)))]
+names_season <- names(influ_season)
+outliers_season <- df_main[names_season,]
+df_main_season <- df_main %>% anti_join(outliers_season)
+model_season <- lm(rev ~ mm + temp + rain, data = df_main_season)
+summary(model_season)
+```
+
+```{r}
+#df_main_time
+influ_time<- cooksD_time[(cooksD_time > (3 * mean(cooksD_time, na.rm = TRUE)))]
+names_time <- names(influ_time)
+outliers_time <- df_main[names_time,]
+df_main_time <- df_main %>% anti_join(outliers_time)
+model_time <- lm(dur ~ dd + wday + holiday, data = df_main_time)
+summary(model_time)
+```
+
+```{r}
+#df_main_dur
+influ_dur<- cooksD_dur[(cooksD_dur > (3 * mean(cooksD_dur, na.rm = TRUE)))]
+names_dur <- names(influ_dur)
+outliers_dur <- df_main[names_dur,]
+df_main_dur <- df_main %>% anti_join(outliers_dur)
+model_dur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + percent_AM + PartOfMonth + Metro_ind, data = df_main_dur)
+summary(model_dur)
+```
 
 # Exploratory Regression
 
