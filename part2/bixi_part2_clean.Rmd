@@ -664,6 +664,20 @@ plot(model_AvgDur, main = "Duration Model",5)
 
 ```{r}
 summary(seasonal_effect_rev_model)
+
+```
+
+```{r}
+#summary(seasonal_effect_rev_model)$coefficients[2]
+summary_season = tidy(seasonal_effect_rev_model)
+summary_season$category = 'With Outlier'
+summary_season_outlier = tidy(model_season)
+summary_season_outlier$category = 'Without Outlier'
+df3 <- rbind(summary_season, summary_season_outlier)
+df3$significance <- ifelse(df3$p.value<0.05, 'Significant Feature', 'Not Significant')
+ggplot(df3, aes(fill=category, y=estimate, x=term)) + 
+  geom_bar(colour="black",position='dodge', stat='identity')  + ggtitle ("Season Coefficients") + theme_minimal ()
+df3
 ```
 
 ```{r}
