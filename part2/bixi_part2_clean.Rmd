@@ -24,6 +24,7 @@ library(leaflet)
 library(gridExtra)
 library(broom)
 library(stats)
+library(car)
 ```
 
 ```{r load_data, include=FALSE}
@@ -64,6 +65,10 @@ df_main <- df_main %>% mutate(
               # Beginning of month versus end of month
               PartOfMonth = factor(ifelse(dd>15, 'EOM', 'BOM')),
               
+              Metro_ind = factor(ifelse(grepl("Métro", name),1,0)),
+              
+              lntot = log(n_tot),
+              
               rev_per_min = rev/dur,
               rev_per_trip = rev/n_tot,
              
@@ -88,7 +93,6 @@ df_main <- df_main %>% mutate(
               week_num = as.numeric(strftime(date, format = "%V")))
  
 ```
-
 
 # Introduction
 **Unlocking the Wheels of Urban Mobility: A Data-Driven Analysis of BIXI**
@@ -396,28 +400,51 @@ would bring if they were non-members.
 
 Variables that make business sense to include:
 
-From our seasonality analysis we identified: - Season (season) -
-Temperature in degrees celcius (temp) - Rainfall in mm (rain)
+From our seasonality analysis we identified: 
+- Season (season) 
+-Temperature in degrees celcius (temp) 
+- Rainfall in mm (rain)
 
-From our daily and weekly pattern analysis we identified: - Part of the
-week i.e. weekend or weekday (wknd_ind) - If it is a holiday (holiday)
+From our daily and weekly pattern analysis we identified: 
+- Part of the week i.e. weekend or weekday (wknd_ind) 
+- If it is a holiday (holiday)
 
-Some other variables that are interesting: - If the user is a member
-(mem) - Location of the bixi station compared to Parc Lafontaine
-(North_South) and (West_East) - Proportion of trips in the morning
-versus the whole day (percent_AM) - total number of trips (n_tot)
+Some other variables that are interesting: 
+- If the user is a member (mem) 
+- Location of the bixi station compared to Parc Lafontaine (North_South) and (West_East) 
+- Proportion of trips in the morning versus the whole day (percent_AM) 
+- total number of trips (n_tot)
+- If the station is a metro station (Metro_ind)
+- If we are at the beginning of month or the end of the month (PartOfMonth)
 
 Interactions: In our EDA we observed a different week day usage of the
 member and non members, thus an interaction term between members and day
 of week would be interesting. (wday\*mem).
 
+Note : By incorporating most of the important variables we increase our chance of respecting the assumption of E(e)=0.
+
+Let's take a quick look at the correlation between our numerical variables to estimate the effect of collinearity.
+```{r , echo=FALSE}
+cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
+```
+We see very low correlation between the Xs which means we should not get any problems with collinearity between our numerical variables.
+
+```{r , echo=FALSE}
+plot(df_main$n_tot, df_main$avg)  
+```
+The variable total number of trip (n_tot) has been removed from the regression because it did not pass the assuption of constant variance, making the model not correctly specified. This makes intuitive sense since as the number of trip increases, the average trip duration should converge towards the true mean.
 
 ## Model
 ```{r , echo=FALSE}
-model_AvgDur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + n_tot + percent_AM, data = df_main)
+model_AvgDur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + percent_AM + PartOfMonth + Metro_ind, data = df_main)
 summary(model_AvgDur)
 ```
 
+Let's use the variance inflation factor to verify for collinearity, we will use a standard threshold of 5.
+```{r , echo=FALSE}
+vif(model_AvgDur)
+```
+No major problem is detected, since the global vifs are all relatively low.
 
 ## Interpretation
 
@@ -531,18 +558,47 @@ p2 <- ggplot(data = residuals_df, aes(x = rain, y = residuals)) +
   geom_point() +
   labs(x = "rain", y = "Residuals")
 
-p3 <- ggplot(data = residuals_df, aes(x = n_tot, y = residuals)) +
+p3 <- ggplot(data = residuals_df, aes(x = lntot, y = residuals)) +
   geom_point() +
-  labs(x = "n_tot", y = "Residuals")
+  labs(x = "lntot", y = "Residuals")
 
 p4 <- ggplot(data = residuals_df, aes(x = percent_AM, y = residuals)) +
   geom_point() +
   labs(x = "percent_AM", y = "Residuals")
 
-grid.arrange(p1, p2, p3, p4, ncol=2)
+grid.arrange(p1, p2, p4, ncol=2)
 
 ```
+season, wknd_ind, mem, holiday, North_South, West_East, PartOfMonth, Metro_ind
 
+```{r , echo=FALSE}
+p5 <- ggplot(data = residuals_df, aes(x = season, y = residuals)) + geom_boxplot() +
+  labs(x = "season", y = "Residuals")
+
+p6 <- ggplot(data = residuals_df, aes(x = mem, y = residuals)) + geom_boxplot() +
+  labs(x = "mem", y = "Residuals")
+
+p7 <- ggplot(data = residuals_df, aes(x = holiday, y = residuals)) + geom_boxplot() +
+  labs(x = "holiday", y = "Residuals")
+
+p8 <- ggplot(data = residuals_df, aes(x = North_South, y = residuals)) + geom_boxplot() +
+  labs(x = "North_South", y = "Residuals")
+
+p9 <- ggplot(data = residuals_df, aes(x = West_East, y = residuals)) + geom_boxplot() +
+  labs(x = "West_East", y = "Residuals")
+
+p10 <- ggplot(data = residuals_df, aes(x = PartOfMonth, y = residuals)) + geom_boxplot() + labs(x = "PartOfMonth", y = "Residuals")
+
+p11 <- ggplot(data = residuals_df, aes(x = Metro_ind, y = residuals)) + geom_boxplot() + labs(x = "Metro_ind", y = "Residuals")
+
+grid.arrange(p5, p6, p7, p8, p9, p10, p11, ncol=3)
+
+```
+## Model correctly specified
+```{r , echo=FALSE}
+plot(predict(model_AvgDur), resid(model_AvgDur)) 
+```
+  
 # Exploratory Regression
 (I would only keep the ones that bring new information and that answer business question)
 ## AM/PM Delta
