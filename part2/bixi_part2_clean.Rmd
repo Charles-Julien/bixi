@@ -42,11 +42,6 @@ head(df_main)
 ```{r echo=FALSE}
 # Data preparation and feature engineering
 
-# To impute revenue for members, we consider the same formula of revenue used for non-members. This deterministic funciton is a linear combination of dur, avg and n_tot.
-# The imputation model has an r-squared of 1.
-imputation_model <- lm(rev ~ dur + avg + n_tot , data = df_main)
-df_main$rev_pred = predict(imputation_model, df_main)
-
 
 # Note: Correlation between rev and dur is very high 0.994467
 
@@ -172,6 +167,18 @@ How does weather interact with weekday in determining the number of
 trips?
 
 # Pre-processing
+
+## Imputation
+
+```{r}
+imputation_model <- lm(rev ~ dur + avg + n_tot , data = df_main)
+df_main$rev_pred = predict(imputation_model, df_main)
+```
+
+To impute revenue for members, we consider the same formula of revenue
+used for non-members. This deterministic function is a linear
+combination of `dur`, `avg` and `n_tot`. The imputation model has an
+r-squared of 1.
 
 ## Outlier detection
 
@@ -387,9 +394,9 @@ Variables that make business sense to include:
 
 From our seasonality analysis we identified:
 
--    Season (`season`)
+-   Season (`season`)
 
--    Temperature in degrees celcius (`temp`)
+-   Temperature in degrees celcius (`temp`)
 
 -   Rainfall in mm (`rain`)
 
@@ -409,7 +416,7 @@ Some other variables that are interesting:
 -   Proportion of trips in the morning versus the whole day
     (`percent_AM`)
 
--    Total number of trips (`n_tot`)
+-   Total number of trips (`n_tot`)
 
 -   If the station is a metro station (`Metro_ind`)
 
@@ -566,7 +573,7 @@ res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residual
 
 No problem here, residuals are normally distributed.
 
-## Model correctly specified
+### Model correctly specified
 
 ```{r , echo=FALSE, fig.width=6, fig.height=4}
 plot(predict(model_AvgDur), resid(model_AvgDur)) 
