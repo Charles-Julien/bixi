@@ -500,23 +500,23 @@ The 4 different levels in order of trip length are as follows:
 
 4.  Highest level : weekend and non-member (+2.47 minutes)
 
-**Holiday**: The coefficient for holiday is 1.06 which means that
-during holidays average trip duration is 1.06 minutes higher on
-average than during non-holidays, holding all else constant.
+**Holiday**: The coefficient for holiday is 1.06 which means that during
+holidays average trip duration is 1.06 minutes higher on average than
+during non-holidays, holding all else constant.
 
 **North_South and West_East**: Their coefficients are 0.08 and -0.26
-which means that on average the average trip duration for trips
-starting at a station South of Parc Lafontaine or West is 0.08 and
--0.26 minutes different from their counter parts respectively,
-holding all else constant. Keep in mind that the coefficient for
-North_South is not significantly different from zero
+which means that on average the average trip duration for trips starting
+at a station South of Parc Lafontaine or West is 0.08 and -0.26 minutes
+different from their counter parts respectively, holding all else
+constant. Keep in mind that the coefficient for North_South is not
+significantly different from zero
 
-**Percent AM**: The magnitude of the coefficient -2.03 is less
-important than its sign for our interpretation. What it means is
-that as the proportion of trips in the morning increases, the
-average trip duration generally decreases when holding all else
-constant. This hints that trips in the morning might be shorter on
-average than trip in the afternoon, hence bring in less revenue.
+**Percent AM**: The magnitude of the coefficient -2.03 is less important
+than its sign for our interpretation. What it means is that as the
+proportion of trips in the morning increases, the average trip duration
+generally decreases when holding all else constant. This hints that
+trips in the morning might be shorter on average than trip in the
+afternoon, hence bring in less revenue.
 
 ## Business Implications:
 
@@ -622,16 +622,18 @@ No major problem of heteroscedasticity were detected. The variable
 In order to confirm the validity of our previous analysis, we explored
 the impact of influential observations on our model parameters and
 statistical measures. Our methodology was to use Cook's distance to
-identify and remove highly influential explanatory features and to
-remove them to ensure accuracy in our coefficients when retraining.
-Cook's distance identifies observations that cause the largest change in
-fitted values when the observation is deleted. The limitation of
-retraining this way is that we could be losing information from highly
-influential data points such as if those observations are highly
-correlated to a subset of the data such as period of extreme rain.
+remove highly influential data points and to refit each model on this
+filtered data. Cook's distance identifies observations that cause the
+largest change in fitted values when the observation is deleted. The
+limitation of retraining this way is that we could be losing information
+from highly influential data points such as if those observations are
+highly correlated to a subset of the data such as period of extreme
+rain. As a result, we conduct this analysis to assess the directional
+validity of our models.
 
 As can be seen by the plots below, each of the aforementioned models
-have a number of observations with a large Cook's distance.
+have a number of observations with a large Cook's distance. Data points
+above the red line represent influential data points.
 
 ```{r, echo=FALSE}
 layout_matrix_1 <- matrix(1:4, ncol = 2)   
@@ -650,7 +652,7 @@ plot(cooksD_dur, main = "Cooks Distance Duration Model")
 abline(h = 4/n, lty = 2, col = "red") # add cutoff line
 ```
 
-To confirm our finding on influential observations, we looked at
+To confirm our findings on influential observations, we looked at
 leverage residuals plots. Leverage represents how much a coefficient
 would change if the observation were removed from the dataset.
 Observations in the charts below that fall above the red line can be
@@ -728,11 +730,11 @@ p_coef3 <- ggplot(dur_summary_combined, aes(fill=category, y=term, x=estimate)) 
 
 ```
 
-Upon retraining each model without the influential, we can observe that
-there was a slight change in the coefficients, which increases our
-confidence in the initial models that we trained. Furthermore, the
-number of significant vs insignificant features at a 5% threshold did
-not change much as well.
+Upon retraining each model without the influential observations, we can
+observe that there was visibly only a slight change in the coefficients,
+which increases our confidence in the initial models that we trained.
+Furthermore, the number of significant vs insignificant features at a 5%
+threshold did not change much as well.
 
 ```{r fig.height = 3, fig.width = 8,echo=FALSE}
 par(mfrow = c(3, 1))
@@ -762,9 +764,10 @@ knitr::kable(time_heatmap, caption = "Time Pattern Model")
 ```
 
 Ultimately, the R Squared of the models increased by a large amount in
-the duration and seasonal models, and decreased for the time pattern
-model. Of the 10,000 observations in the original dataset, less than 700
-observations in each model training set was considered influential.
+the duration and seasonal models, and decreased slightly for the time
+pattern model. Of the 10,000 observations in the original dataset, less
+than 700 observations in each model training set was considered
+influential.
 
 ```{r,echo=FALSE}
 model_dur_outlier_rsquared = summary(model_dur)$r.squared
@@ -788,13 +791,6 @@ rsquared_df <- tribble(
 )
 knitr::kable(rsquared_df, caption = "R Squared Changes")
 
-
-
-#strwrap(print(paste0("The Average Duration Model's R Squared went from ", model_dur_rsquared," to " ,model_dur_outlier_rsquared, " when accounting for influential values.")),40)
-
-#strwrap(print(paste0("The Time Pattern Model's R Squared went from ", model_time_rsquared," to " ,model_time_outlier_rsquared, " when accounting for influential values.")),40)
-
-#strwrap(print(cat(paste0("The Seasonal Model's R Squared went from ", model_season_rsquared," to " ,model_season_outlier_rsquared, " when accounting for influential values."))),40)
 ```
 
 # Autocorrelation Analysis
@@ -802,14 +798,14 @@ knitr::kable(rsquared_df, caption = "R Squared Changes")
 To further validate our analysis, we checked for autocorrelation in the
 data using ACF residual plots and the Durbin-Watson Test. The result of
 these checks could help us determine if we should pursue linear mixed
-models as potential next steps.
+models as a potential next step.
 
 For ACF plots, we can observe whether or not there is correlation among
 the residuals at different lag intervals. For there to be no
-autocorrelation, we would expect the residuals to be close to 0. Using
-this method, it seems that each of the models have some level of
-autocorrelation, with the strongest autocorrelation being observed in
-the time pattern and the seasonal models.
+autocorrelation, we would expect the autocorrelation of the residuals to
+be close to 0. Using this method, it seems that each of the models have
+some level of autocorrelation, with the strongest autocorrelation being
+observed in the time pattern and the seasonal models.
 
 The other method we explored was the Durbin-Watson test. The goal of
 this statistical test is to detect the presence of autocorrelation at
@@ -818,8 +814,8 @@ positive first order serial correlation in the data (i.e. correlation at
 1 lag is less than or equal to 0) and the alternative hypothesis is that
 there is a positive first order serial correlation in the data (i.e.
 correlation at lag 1 is greater than 0). Given the p values and the
-autocorrelation statistics below, we must reject the null hypothesis
-using a threshold of 5% and conclude that each model has some level of
+autocorrelation statistics below, we reject the null hypothesis using a
+threshold of 5% and conclude that each model has some level of
 autocorrelation. As a result, we suggest using linear mixed models
 moving forward.
 
@@ -885,7 +881,8 @@ engineering, formating.
 
 Gabriel Jobert :
 
-Chike Odenigbo:
+Chike Odenigbo: exploratory models (not included), feature engineering,
+influential observations, autocorrelation
 
 Atul Sharma: Contributed in developing the Reseacrh questions,
 interpreting the findings of the model and finalising the conclusion .
