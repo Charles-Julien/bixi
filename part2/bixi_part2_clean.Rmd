@@ -400,7 +400,7 @@ From our seasonality analysis we identified:
 
 From our daily and weekly pattern analysis we identified:
 
--   Part of theweek i.e. weekend or weekday (`wknd_ind`)
+-   Part of the week i.e. weekend or weekday (`wknd_ind`)
 
 -   If it is a holiday (`holiday`)
 
@@ -415,12 +415,10 @@ Some other variables that are interesting:
 -   Proportion of trips in the morning versus the whole day
     (`percent_AM`)
 
--   Total number of trips (`n_tot`)
+-   If the station name contains the word 'metro' (`Metro_ind`)
 
--   If the station is a metro station (`Metro_ind`)
-
--   If we are at the beginning of month or the end of the month
-    (`PartOfMonth`)
+-   If we are at the beginning of month(before the 15th) or the end of
+    the month (`PartOfMonth`)
 
 **Interactions**: In our EDA we observed a different week day usage of
 the member and non members, thus an interaction term between members and
@@ -465,7 +463,7 @@ are also at play and are not included in the model. The p value
 associated with the F-statistic is very low, hence our model is globally
 significant.
 
-**Intercept** - The interpretation of the intercept does not make sense
+**Intercept** : The interpretation of the intercept does not make sense
 in this case since the number of trips would have to be zero.
 
 **Season**: The reference level is fall. We can see that on average trip
@@ -517,6 +515,17 @@ proportion of trips in the morning increases, the average trip duration
 generally decreases when holding all else constant. This hints that
 trips in the morning might be shorter on average than trip in the
 afternoon, hence bring in less revenue.
+
+**Part of Month** : The coefficient for part of month is -0.22 which
+means that on average, the average trip duration is 0.22 minutes shorter
+in the second half of the month holding all else constant. This feature
+was not found to be significantly different from zero.
+
+**Metro Indicator** : Metro indicator's coefficient is -0.75 which means
+that the expected value for average trip length decreases by 0.75
+minutes when a bixi station is near a metro acces point, holding all
+else constant. This would suggest that user who rent bikes after making
+a metro ride are closer to their final destination than in other cases.
 
 ## Business Implications:
 
@@ -848,31 +857,39 @@ durbinWatsonTest(seasonal_effect_rev_model)
 # Conclusion
 
 In conclusion, several key operational and strategic considerations have
-emerged from the data analysis of BIXI bike rentals: Operational
-Adjustments: The data suggests that revenue is higher in warmer months.
-To capitalize on this, it is advisable to optimize operations during
-this period, which could involve increasing staffing, enhancing
-promotional activities, and ensuring optimal equipment availability.
+emerged from the data analysis of BIXI bike rentals:
+
+Operational Adjustments: The data suggests that revenue is higher in
+warmer months. To capitalize on this, it is advisable to optimize
+operations during this period, which could involve increasing staffing,
+enhancing promotional activities, and ensuring optimal equipment
+availability.
+
 Rainy Day Strategies: Rainfall appears to have a negative impact on
 revenue. Implementing strategies to mitigate this effect, such as
 promotional offers or special activities for rainy days, may help
-attract more customers. Promotion and Marketing: Data indicates that
-average trip length is longest in spring, suggesting an eagerness to use
-bikes after winter. This insight can be leveraged for promotional
-purposes. Resource Allocation: Understanding patterns in trip duration
-based on weather, time of day, and location is crucial for resource
-allocation. Longer trips are expected during hot, non-rainy weekends and
-holidays. Stations in certain areas have longer trip durations,
-indicating potential for additional station placement. Pricing Strategy:
-The analysis highlights that non-members on weekends tend to take longer
-trips. Adjusting pricing for this group during these times could
-significantly increase profit margins. Operational Strategy: It's
-important to consider the tradeoff between the number of trips and
-average trip length. Increasing the number of trips on a given day may
-lead to shorter hauls. This information should inform operational
-decisions. Incorporating these insights into the business's operations
-and strategies can lead to improved efficiency, customer satisfaction,
-and profitability
+attract more customers.
+
+Promotion and Marketing: Data indicates that average trip length is
+longest in spring, suggesting an eagerness to use bikes after winter.
+This insight can be leveraged for promotional purposes.
+
+Resource Allocation: Understanding patterns in trip duration based on
+weather, time of day, and location is crucial for resource allocation.
+Longer trips are expected during hot, non-rainy weekends and holidays.
+Stations in certain areas have longer trip durations, indicating
+potential for additional station placement.
+
+Pricing Strategy: The analysis highlights that non-members on weekends
+tend to take longer trips. Adjusting pricing for this group during these
+times could significantly increase profit margins.
+
+Operational Strategy: It's important to consider the tradeoff between
+the number of trips and average trip length. Increasing the number of
+trips on a given day may lead to shorter hauls. This information should
+inform operational decisions. Incorporating these insights into the
+business's operations and strategies can lead to improved efficiency,
+customer satisfaction, and profitability
 
 # Contribution
 
