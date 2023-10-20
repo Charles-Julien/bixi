@@ -879,7 +879,7 @@ and profitability
 Charles Julien :Research question 3, version control, part of feature
 engineering, formating.
 
-Gabriel Jobert :
+Gabriel Jobert : Research question 1 and 2
 
 Chike Odenigbo: exploratory models (not included), feature engineering,
 influential observations, autocorrelation
