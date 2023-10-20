@@ -2,6 +2,7 @@
 title: "Part 2: Linear regression models"
 author: "Charles Julien, Chike Odenigbo, Atul Sharma, Gabriel Jobert"
 date: "10/20/2023"
+geometry: "left=2cm,right=2cm,top=1cm,bottom=1.2cm"
 output:
   pdf_document:
     toc: true
@@ -155,40 +156,21 @@ on the insights gathered during this project.
 
 ## Imputation
 
+Revenue for members is missing since they do not pay a usage fee, but
+rather a fixed cost.
+
 ```{r}
 imputation_model <- lm(rev ~ dur + avg + n_tot , data = df_main)
 df_main$rev_pred = predict(imputation_model, df_main)
 ```
 
-To impute revenue for members, we consider the same formula of revenue
-used for non-members. This deterministic function is a linear
-combination of `dur`, `avg` and `n_tot`. The imputation model has an
-r-squared of 1.
-
-## Outlier detection
-
-```{r}
-model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
-summary(model)
-```
-
-```{r}
-model.diag.metrics <- augment(model)
-head(model.diag.metrics)
-```
-
-```{r}
-# OUTLIERS  WITH COOKS DISTANCE
-model.diag.metrics %>%
-  top_n(3, wt = .cooksd)
-```
-
-```{r}
-n <- nrow(df_main)
-cooksD <- cooks.distance(model)
-plot(cooksD, main = "Cooks Distance for Influential Obs")
-abline(h = 4/n, lty = 2, col = "steelblue") # add cutoff line
-```
+To impute revenue for members, we make the assumption that they would
+bring in as much revenue as non-members for the same usage.Thus we
+consider the same formula of revenue used for non-members. This unknown
+deterministic function is most likely a linear combination of usage
+variables like `dur`, `avg` and `n_tot`. We try to approximate this
+function and use it to impute members revenue. The imputation model has
+an r-squared of 1 on non-members data.
 
 # Research Question 1: How do seasonal factors impact trip revenue for BIXI Montréal?
 
@@ -391,13 +373,13 @@ if the sample size is large enough.
 
 # Research Question 3: What variables impact the average bixi trip duration?
 
-The idea is to identify the driving factors of a bixi trip length when
-we control for most of the variables. Trip length is one of the three
-important variables that drives revenue, the other ones being the number
-of trips and the pricing scheme. Keep in mind that increasing the trip
-length does not necessarily increase revenues since an unwanted increase
-in trip length may discourage users from using bixi's system and result
-in a decrease in trip number.
+**The objective** is to identify the driving factors of a bixi's trip
+length when we control for most of the variables. Trip length is one of
+the three important variables that drives revenue, the other ones being
+the number of trips and the pricing scheme. Keep in mind that increasing
+the trip length does not necessarily increase revenues since an unwanted
+increase in trip length may discourage users from using bixi's system
+and result in a decrease in trip number.
 
 ## Variables Selection
 
@@ -409,7 +391,8 @@ Variables that make business sense to include:
 
 From our seasonality analysis we identified:
 
--   Season (`season`)
+-   Season; grouping of months from april to november in their
+    respective season (`season`)
 
 -   Temperature in degrees celcius (`temp`)
 
@@ -425,8 +408,9 @@ Some other variables that are interesting:
 
 -   If the user is a member(`mem`)
 
--   Location of the bixi station compared to Parc Lafontaine
-    (`North_South`) and (`West_East`)
+-   Location of the bixi station compared to Parc Lafontaine, a landmark
+    in the middle of the bixi station system (`North_South`) and
+    (`West_East`)
 
 -   Proportion of trips in the morning versus the whole day
     (`percent_AM`)
@@ -475,69 +459,64 @@ summary(model_AvgDur)
 
 ## Interpretation
 
-**Overall Model** - The model explains approximately 12.52% of the
-variation in the average trip duration. which means that other factors
-are also at play and not included in the model.
+**Overall Model** - The model explains approximately 10% of the
+variation in the average trip duration which means that other factors
+are also at play and are not included in the model. The p value
+associated with the F-statistic is very low, hence our model is globally
+significant.
 
 **Intercept** - The interpretation of the intercept does not make sense
 in this case since the number of trips would have to be zero.
 
-**Coefficients** - **Season**: The reference level is fall. We can see
-that on average trip duration during spring and summer are respectively
-2.33 and 0.38 minutes longer than in fall holding everything else
-constant.
+**Season**: The reference level is fall. We can see that on average trip
+duration during spring and summer are respectively 2.7 and 0.5 minutes
+longer than in fall holding everything else constant.
 
--   **Temperature**: The coefficient of temperature is 0.14 which means
-    that an increase in temperature of 1 degree celcius corresponds to
-    an increase of average trip duration of 0.14 minutes on average
-    holding all else constant.
+**Temperature**: The coefficient of temperature is 0.11 which means that
+an increase in temperature of 1 degree celcius corresponds to an
+increase of average trip duration of 0.11 minutes on average holding all
+else constant.
 
--   **Rainfall**: The coefficient for rain is -0.12 which means that an
-    increase in rainfall of 1 mm corresponds to a decrease of average
-    trip duration of 0.12 minutes on average holding all else constant.
+**Rainfall**: The coefficient for rain is -0.1 which means that an
+increase in rainfall of 1 mm corresponds to a decrease of average trip
+duration of 0.1 minutes on average holding all else constant.
 
--   **Effect of Weekend Indicator and membership**: Since there exists
-    an interaction between both variables, it is no longer possible to
-    interpret one without the other. This implies that the relation
-    between average trip duration and membership is different depending
-    on the moment of the week. The opposite is also true, the relation
-    between average trip duration and the moment of the week is
-    different depending on the membership status.
+**Effect of Weekend Indicator and membership**: Since there exists an
+interaction between both variables, it is no longer possible to
+interpret one without the other. This implies that the relation between
+average trip duration and membership is different depending on the
+moment of the week. The opposite is also true, the relation between
+average trip duration and the moment of the week is different depending
+on the membership status. We observe that non-member have longer trips
+on average and that weekend trips tends to increase average trip length.
 
-    -   **Weekend indicator's** coefficient 2.638923 is the average
-        difference between average trip duration during weekend and
-        weekday for non-members. In other words, for non-members,
-        average trip duration is higher on average than for members
-        holding all else constant.
+The 4 different levels in order of trip length are as follows:
 
-    -   **Membership's** coefficient -0.385385 is the average difference
-        between average trip duration for members and non-members for
-        weekdays. In other words, during weekdays, the average trip
-        duration is shorter on average for members than for non-members
-        holding all else constant.
+1.  Lowest level : Weekday and member (-1.84 minutes)
 
-    -   **Interaction** **term's** coefficient -1.868383 is ...
+2.  Second lowest : Weekend and member (2.5-1.8-1.5 = -0.8 minutes)
 
--   **Holiday**: The coefficient for holiday is 1.069557 which means
-    that during holidays average trip duration is 1.069 minutes higher
-    on average than during non-holidays, holding all else constant.
+3.  Reference level: Weekday and non-member (0 minutes)
 
--   **North_South and West_East**: Their coefficients are 0.35 and -0.23
-    which means that on average the average trip duration for trips
-    starting at a station South of Parc Lafontaine or West is 0.35 and
-    -0.23 minutes different from their counter parts respectively,
-    holding all else constant.
+4.  Highest level : weekend and non-member (+2.47 minutes)
 
--   **Total number of trips**: The coefficient is -0.055315 which means
-    that on average as number of trips increase, the average trip length
-    in minutes decreases, holding all else constant.
+**Holiday**: The coefficient for holiday is 1.06 which means that
+during holidays average trip duration is 1.06 minutes higher on
+average than during non-holidays, holding all else constant.
 
--   **Percent AM**: The magnitude of the coefficient -2.351044 is less
-    important than its sign for our interpretation. What it means is
-    that as the proportion of trips in the morning increases, the
-    average trip duration generally decreases when holding all else
-    constant. This hints that trips in the morning might be shorter on
-    average than trip in the afternoon, hence bring in less revenue.
+**North_South and West_East**: Their coefficients are 0.08 and -0.26
+which means that on average the average trip duration for trips
+starting at a station South of Parc Lafontaine or West is 0.08 and
+-0.26 minutes different from their counter parts respectively,
+holding all else constant. Keep in mind that the coefficient for
+North_South is not significantly different from zero
+
+**Percent AM**: The magnitude of the coefficient -2.03 is less
+important than its sign for our interpretation. What it means is
+that as the proportion of trips in the morning increases, the
+average trip duration generally decreases when holding all else
+constant. This hints that trips in the morning might be shorter on
+average than trip in the afternoon, hence bring in less revenue.
 
 ## Business Implications:
 
@@ -558,12 +537,6 @@ constant.
     the weekend. Charging a heftier price for these people at that time
     may increase profit margins significantly.
 
-4.  **Operational Strategy**: It is important to keep in mind the
-    tradeoff between the number of trips and the average trip length.
-    Indeed, as the number of trips increase for a given day, the average
-    trip length decreases. This may suggest that the additional trips
-    during those days are short haul.
-
 ## Verification of assumptions and collinearity
 
 ### Variance Inflation Factor
@@ -580,8 +553,8 @@ low.
 
 ### Verification of Normality of Residuals
 
-```{r, echo=FALSE, fig.width=5, fig.height=4}
-pin=c(2,2)
+```{r, echo=FALSE, fig.width=4, fig.height=3}
+#pin=c(2,2)
 res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residuals")
 
 ```
@@ -590,7 +563,7 @@ No problem here, residuals are normally distributed.
 
 ### Model correctly specified
 
-```{r , echo=FALSE, fig.width=6, fig.height=4}
+```{r , echo=FALSE, fig.width=4.5, fig.height=3.5}
 plot(predict(model_AvgDur), resid(model_AvgDur)) 
 ```
 
@@ -660,7 +633,7 @@ correlated to a subset of the data such as period of extreme rain.
 As can be seen by the plots below, each of the aforementioned models
 have a number of observations with a large Cook's distance.
 
-```{r}
+```{r, echo=FALSE}
 layout_matrix_1 <- matrix(1:4, ncol = 2)   
 layout(layout_matrix_1)  
 n <- nrow(df_main)
@@ -683,17 +656,17 @@ would change if the observation were removed from the dataset.
 Observations in the charts below that fall above the red line can be
 considered influential observations. The spread of the residuals
 shouldn't change much as a function of leverage which would indicate
-heteroskedasticity. In this case, all three model seem to display some
-form of heteroskedasticity particularly the seasonal model.
+heteroscedasticity. In this case, all three model seem to display some
+form of heteroscedasticity particularly the seasonal model.
 
-```{r}
+```{r, echo=FALSE}
 par(mfrow = c(2, 2))
 plot(seasonal_effect_rev_model, main = "Seasonal Model",5)
 plot(time_pattern_dur_model, main = "Time Pattern Model",5)
 plot(model_AvgDur, main = "Duration Model",5)
 ```
 
-```{r}
+```{r, include=FALSE}
 influ_season<- cooksD_season[(cooksD_season > (3 * mean(cooksD_season, na.rm = TRUE)))]
 names_season <- names(influ_season)
 outliers_season <- df_main[names_season,]
@@ -701,7 +674,7 @@ df_main_season <- df_main %>% anti_join(outliers_season)
 model_season <- lm(rev_pred ~ mm + temp + rain + mem, data = df_main_season)
 ```
 
-```{r}
+```{r, include=FALSE}
 #df_main_time
 influ_time<- cooksD_time[(cooksD_time > (3 * mean(cooksD_time, na.rm = TRUE)))]
 names_time <- names(influ_time)
@@ -710,7 +683,7 @@ df_main_time <- df_main %>% anti_join(outliers_time)
 model_time <- lm(dur ~ dd + wday + holiday, data = df_main_time)
 ```
 
-```{r}
+```{r, include=FALSE}
 #df_main_dur
 influ_dur<- cooksD_dur[(cooksD_dur > (3 * mean(cooksD_dur, na.rm = TRUE)))]
 names_dur <- names(influ_dur)
@@ -719,7 +692,7 @@ df_main_dur <- df_main %>% anti_join(outliers_dur)
 model_dur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + percent_AM + PartOfMonth + Metro_ind, data = df_main_dur)
 ```
 
-```{r}
+```{r, echo=FALSE}
 summary_season = tidy(seasonal_effect_rev_model)
 summary_season$category = 'With Outlier'
 summary_season_outlier = tidy(model_season)
@@ -761,14 +734,14 @@ confidence in the initial models that we trained. Furthermore, the
 number of significant vs insignificant features at a 5% threshold did
 not change much as well.
 
-```{r fig.height = 3, fig.width = 8}
+```{r fig.height = 3, fig.width = 8,echo=FALSE}
 par(mfrow = c(3, 1))
 p_coef1 
 p_coef2 
 p_coef3
 ```
 
-```{r}
+```{r,echo=FALSE}
 dur_heatmap = dur_summary_combined %>%
     tabyl(category, significance)%>%
    as.data.frame()
@@ -793,7 +766,7 @@ the duration and seasonal models, and decreased for the time pattern
 model. Of the 10,000 observations in the original dataset, less than 700
 observations in each model training set was considered influential.
 
-```{r}
+```{r,echo=FALSE}
 model_dur_outlier_rsquared = summary(model_dur)$r.squared
 model_time_outlier_rsquared = summary(model_time)$r.squared
 model_season_outlier_rsquared = summary(model_season)$r.squared
@@ -851,71 +824,18 @@ autocorrelation. As a result, we suggest using linear mixed models
 moving forward.
 
 ```{r}
-acf(model_AvgDur$residuals, type = "correlation")
+#acf(model_AvgDur$residuals, type = "correlation")
 durbinWatsonTest(model_AvgDur)
 ```
 
 ```{r}
-acf(time_pattern_dur_model$residuals, type = "correlation")
+#acf(time_pattern_dur_model$residuals, type = "correlation")
 durbinWatsonTest(time_pattern_dur_model)
 ```
 
 ```{r}
-acf(seasonal_effect_rev_model$residuals, type = "correlation")
+#acf(seasonal_effect_rev_model$residuals, type = "correlation")
 durbinWatsonTest(seasonal_effect_rev_model)
-```
-
-# Exploratory Regression
-
-(I would only keep the ones that bring new information and that answer
-business question) \## AM/PM Delta
-
-```{r}
-model <- lm(n_AM_PM_delta ~ long_wknd_ind + season + rain_ind + mem, data = df_main) # Goal is to look at stations more used in the mornings than afternoons
-summary(model)
-```
-
-## Trip length wkday/wknd
-
-```{r}
-#df_main 
-# SHORTER TRIPS ON WEEKDAYS THAN WEEKENDS
-model <- lm(avg ~ long_wknd_ind + season + rain_ind + mem, data = df_main)
-summary(model)
-```
-
-## trip length for members/non-members
-
-```{r}
-# MEMBERS TAKE SHORTER TRIPS
-# MEMBERS TAKE LONGER TRIPS IN THE RAIN
-model <- lm(avg ~ (rain_ind *mem) + long_wknd_ind, data = df_main)
-summary(model)
-```
-
-## Revenue per trip: seasonal effect
-
-```{r}
-#HIGHER REVENUE PER TRIP IN SPRING AND SUMMER THAN WINTER
-model <- lm(rev_per_trip ~ long_wknd_ind + season + rain_ind, data = df_main)
-summary(model)
-```
-
-## Number of trips as season advances
-
-```{r}
-#df_main 
-# AS BIXI SEASON GOES ON, WEEKDAY NUMBER OF TRIPS GO UP WITH A STATISTICAL SIGNIFICANCE
-model <- lm(n_tot ~ (long_wknd_ind*week_num), data = df_main)
-summary(model)
-```
-
-```{r}
-plot(model,4)
-```
-
-```{r}
-plot(model,5)
 ```
 
 # Limitations and shortcomings
@@ -928,18 +848,44 @@ plot(model,5)
 -   Other External Factors: Events, road conditions, or public
     transportation disruptions can affect BIXI usage but are not
     captured in the dataset.
--   Mention Auto-correlation (Chike)
 
 # Conclusion
 
-(Review the research questions that were answered)
+In conclusion, several key operational and strategic considerations have
+emerged from the data analysis of BIXI bike rentals: Operational
+Adjustments: The data suggests that revenue is higher in warmer months.
+To capitalize on this, it is advisable to optimize operations during
+this period, which could involve increasing staffing, enhancing
+promotional activities, and ensuring optimal equipment availability.
+Rainy Day Strategies: Rainfall appears to have a negative impact on
+revenue. Implementing strategies to mitigate this effect, such as
+promotional offers or special activities for rainy days, may help
+attract more customers. Promotion and Marketing: Data indicates that
+average trip length is longest in spring, suggesting an eagerness to use
+bikes after winter. This insight can be leveraged for promotional
+purposes. Resource Allocation: Understanding patterns in trip duration
+based on weather, time of day, and location is crucial for resource
+allocation. Longer trips are expected during hot, non-rainy weekends and
+holidays. Stations in certain areas have longer trip durations,
+indicating potential for additional station placement. Pricing Strategy:
+The analysis highlights that non-members on weekends tend to take longer
+trips. Adjusting pricing for this group during these times could
+significantly increase profit margins. Operational Strategy: It's
+important to consider the tradeoff between the number of trips and
+average trip length. Increasing the number of trips on a given day may
+lead to shorter hauls. This information should inform operational
+decisions. Incorporating these insights into the business's operations
+and strategies can lead to improved efficiency, customer satisfaction,
+and profitability
 
 # Contribution
 
-Charles Julien :
+Charles Julien :Research question 3, version control, part of feature
+engineering, formating.
 
 Gabriel Jobert :
 
 Chike Odenigbo:
 
-Atul Sharma:
+Atul Sharma: Contributed in developing the Reseacrh questions,
+interpreting the findings of the model and finalising the conclusion .
