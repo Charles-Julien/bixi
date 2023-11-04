@@ -1,0 +1,262 @@
+---
+title: "Part 3: Generalized Linear Models"
+author: "Charles Julien, Chike Odenigbo, Atul Sharma, Gabriel Jobert"
+date: "11/17/2023"
+geometry: "left=2cm,right=2cm,top=1cm,bottom=1.2cm"
+output:
+  pdf_document:
+    toc: true
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message = FALSE, warning=FALSE, include = FALSE, echo=FALSE}
+# Import (The fewer the better)
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(leaflet)
+library(gridExtra)
+library(broom)
+library(stats)
+library(car)
+library(janitor)
+library(tibble)
+```
+
+```{r load_data, include=FALSE}
+# Data loading
+
+# Set working directory to file location
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+df_raw = read.csv("./../src/bixi10.csv")
+df_station = read.csv("./../src/2021_stations.csv")
+df_main = left_join(df_raw,df_station,by = c("station"="pk"))
+head(df_main)
+
+```
+
+```{r echo=FALSE}
+# Data preparation and feature engineering
+
+
+# Note: Correlation between rev and dur is very high 0.994467
+
+df_main <- df_main %>% mutate(
+              holiday = factor(holiday),
+              mem = factor(mem),
+              mm = factor(mm),
+              station = factor(station),
+              
+              wday_ordered = factor(wday, levels = c("Monday", "Tuesday", "Wednesday",  "Thursday", "Friday", "Saturday", "Sunday"),ordered = TRUE),
+              season = ifelse((mm %in% c(12,1,2)), 'Winter',
+                       ifelse((mm %in% c(3,4,5)), 'Spring',
+                       ifelse((mm %in% c(6,7,8)), 'Summer',
+                       ifelse((mm %in% c(9,10,11)), 'Fall','No Season')))),
+              
+              rain_ind = factor(ifelse((rain != 0), 'Rain', 'NoRain')),
+              
+              # Compared to Parc Lafontaine 
+              North_South = factor(ifelse(latitude>45.5271, 'North', 'South')),
+              West_East = factor(ifelse(longitude>-73.5705, 'East', 'West')),
+              
+              # Beginning of month versus end of month
+              PartOfMonth = factor(ifelse(dd>15, 'EOM', 'BOM')),
+              
+              Metro_ind = factor(ifelse(grepl("Métro", name),1,0)),
+              
+              lntot = log(n_tot),
+              
+              rev_per_min = rev/dur,
+              rev_per_trip = rev/n_tot,
+             
+              percent_AM = n_AM/n_tot,
+              percent_PM = n_PM/n_tot,
+              
+              percent_AM_PM_delta = percent_AM - percent_PM,
+              n_AM_PM_delta = n_AM - n_PM,
+              
+              am_pm_ind = ifelse(n_AM>=n_PM, 'AM','PM'),
+              
+              wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
+                        ,'Weekday')),
+                
+              long_wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
+                        ,ifelse((wday %in% c("Friday","Monday") & holiday=='1'),'Long Weekend','Weekday'))),
+        
+              year = 2021 ,
+              
+              date = as.Date(paste(year,mm,dd,sep="/")),
+              
+              week_num = as.numeric(strftime(date, format = "%V")),
+ 
+
+# create a new variable indicating whether the average daily trip duration exceeds 15 minutes, and explore models for this new variable.
+
+              avg_15_ind = factor(ifelse(avg>15,1,0))
+
+)
+
+
+```
+
+
+# Instructions
+Part 3: Generalized linear models (due November 10 before 11:55 PM)
+
+• Explore various generalized linear models for the response variables of interest, specifically, for the number of rentals (total, AM, and PM). 
+In addition, create a new variable indicating whether the average daily trip duration exceeds 15 minutes, and explore models for this new variable.
+
+• Be sure that your analyses allow you to answer well formulated business / research questions
+that you wish to address. The goal is to use generalized linear models to provide interesting
+and relevant insights from the data.
+
+• Comment on findings and discuss the main takeaways from this analysis from a business
+perspective. Be sure to provide relevant model outputs that support your discussion.
+
+• Discuss any shortcomings or limitations of the analyses carried out.
+
+# Introduction
+
+
+# Business/Research questions
+The target variables is number of rentals (total, AM, and PM)
+
+# Pre-processing
+
+## Imputation  (might have to remove)
+
+Revenue for members is missing since they do not pay a usage fee, but
+rather a fixed cost.
+
+```{r}
+imputation_model <- lm(rev ~ dur + avg + n_tot , data = df_main)
+df_main$rev_pred = predict(imputation_model, df_main)
+```
+
+To impute revenue for members, we make the assumption that they would
+bring in as much revenue as non-members for the same usage.Thus we
+consider the same formula of revenue used for non-members. This unknown
+deterministic function is most likely a linear combination of usage
+variables like `dur`, `avg` and `n_tot`. We try to approximate this
+function and use it to impute members revenue. The imputation model has
+an r-squared of 1 on non-members data.
+
+# Research Question 1: How does ... ?
+
+**Objective of Analysis:** 
+
+## Variables Selection
+
+## Model
+
+```{r model1, echo=FALSE}
+
+```
+
+## Interpretation
+
+**Overall Model**: R squared, f stat
+
+
+**Intercept**: The intercept is ...
+
+
+## Business implications (can change the sub categories)
+
+1.  **Operational Adjustments:** 
+
+2.  **Rainy Day Strategies:** 
+
+3.  **Membership:**  
+
+
+
+# Research Question 2: How do...?
+
+**Objective of Analysis:** 
+
+## Variables Selection
+
+
+## Model
+
+```{r model_2, echo=FALSE}
+
+```
+
+## Interpretation
+
+**Overall Model** : R squared F stat
+
+**Intercept***: 
+
+## Business implications (can change the sub categories)
+
+1.  **Operational Adjustments:** 
+
+2.  **Rainy Day Strategies:** 
+
+3.  **Membership:** 
+
+
+# Research Question 3: What variables ... ?
+
+**Objective of Analysis:** 
+
+## Variables Selection
+
+**Correlation:**
+
+Let's take a quick look at the correlation between our numerical
+variables to estimate the effect of collinearity.
+
+```{r cor, echo=FALSE}
+cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
+```
+
+
+## Model
+
+```{r model_3, echo=FALSE}
+
+```
+
+## Interpretation
+
+**Overall Model** R squared, F-stat
+
+**Intercept** : 
+
+
+## Business Implications:
+
+1.  **Promotion and Marketing**: 
+
+2.  **Resource Allocation**: 
+
+3.  **Pricing Strategy**: 
+
+
+# Limitations and shortcomings
+Autocorrelation of data, the observations are not independant, as seens in our previous analysis.
+
+# Conclusion
+
+
+
+# Contribution
+
+Charles Julien :
+
+Gabriel Jobert : 
+
+Chike Odenigbo : 
+
+Atul Sharma : 
