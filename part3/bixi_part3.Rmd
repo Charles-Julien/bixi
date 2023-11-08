@@ -36,9 +36,9 @@ library(AER)
 # Data loading
 
 # Set working directory to file location
-# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-df_raw = read.csv("bixi10.csv")
-df_station = read.csv("2021_stations.csv")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+df_raw = read.csv("./../src/bixi10.csv")
+df_station = read.csv("./../src/2021_stations.csv")
 df_main = left_join(df_raw,df_station,by = c("station"="pk"))
 head(df_main)
 
