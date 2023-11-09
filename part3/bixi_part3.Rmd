@@ -370,6 +370,63 @@ cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
 
 3.  **Pricing Strategy**:
 
+# Research Question 4: Are there significant differences in bike trips counts between weekdays and weekends?
+
+**Objective of Analysis:** 
+The objective of the analysis is to quantify and assess the differences in ridership during weekend and weekdays. The analysis would generate insights into the  patterns of ridership that could be useful for operational planning, resource allocation, or service improvements.
+
+## Variables Selection
+
+To evaluate how time of the day influences trip count, we need to create a model that accounts for the day being a weekend or a weekday. The would check if the total trip count as a possion distribution using chisquare test.
+```{r}
+chisq.test(table(df_main$n_tot))
+```
+We can also see from the histogram that the response variable is skewed to the right. It’s clear that linear regression would not be appropriate in this context. We can fit the Poisson regression model using the glm function, specifying that the distribution is poisson. We’ll start by fitting the model which includes all explanatory variable:
+```{r}
+hist(df_main$n_tot, breaks = 20, main = "Histogram of n_tot", xlab = "n_tot")
+
+```
+## Model
+
+```{r model_4, echo=FALSE}
+
+# Create a new variable to denote weekdays and weekends
+df_main <- df_main %>%
+  mutate(weekday_weekend = ifelse(wday %in% c("Saturday", "Sunday"), "Weekend", "Weekday"))
+
+# Fit separate GLMs for trip counts by weekday/weekend
+total_model <- glm(n_tot ~ weekday_weekend, data = df_main, family = poisson)
+
+# View summaries of the models
+summary(total_model)
+
+```
+
+## Interpretation
+
+**Overall Model** R squared, F-stat
+
+**Intercept** : 
+
+The intercept (3.004083) represents the log count of the total number of trips on weekdays.In other words, the number of trips on weekdays is exp(3.004083)=20.
+
+**Weekend** : 
+
+βweekend = -0.040604: number of trips is higher on weekdays than weekend. More specifically,  the mean number of trips on weekend is is exp(-0.040604) = 0.96 times those on weekdays. In other words, the mean number of trips on weekend is 4% lower than that in weekdays.The p-value is 3.37e-16 which is less that any acceptable value of alpha which represent that the difference in trip number during weekend and weekdays is statistically different.
+
+## Business Implications:
+
+**Resource Allocation**: Given the higher demand during weekdays, businesses or services dependent on these trips may need to allocate more resources, such as bikes, maintenance, or staff, during these periods. 
+
+**Pricing Strategies**: If the service is fee-based, adjusting pricing strategies to account for the difference in demand between weekdays and weekends could be considered. For instance, offering promotions or discounts during lower demand days (weekends) to attract more users. 
+
+**Marketing Efforts**: Tailoring marketing campaigns or efforts to encourage more weekend usage could be explored. Promoting special events, family packages, or leisure-oriented offers during weekends might help in increasing weekend ridership. 
+
+**Operational Optimization**: During weekends, operational adjustments could be made to enhance the user experience. For instance, ensuring bike availability, adjusting operating hours, or implementing user-friendly initiatives to attract more weekend users. 
+
+**Service Enhancements**: Understanding the differences in usage patterns can guide service improvements. Addressing any barriers that might discourage weekend ridership, such as safety concerns, parking availability, or service accessibility, could be a focus for enhancements.
+
+
 # Limitations and shortcomings
 
 Autocorrelation of data, the observations are not independant, as seens
