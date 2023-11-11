@@ -185,17 +185,17 @@ summary(glm_membership)
 -   **Intercept (`-0.72009`)**: This is the log odds of the average trip
     duration exceeding 15 minutes for a non-member (because `mem` is 0
     for non-members), on a day that is neither a holiday (`holiday` is
-    0) nor part of a long weekend (`long_wknd_ind` is 0). The negative
-    value of the intercept suggests that, for this reference group, the
-    probability of having a trip duration exceeding 15 minutes is less
-    than 50%. To convert the log odds to probability, you would use the
-    logistic function
-    :$P(\text{avg duration} > 15 | \text{non-member, non-holiday, non-long weekend}) = \frac{1}{1 + e^{0.72009}}$We
-    can calculate the exact probability:
-    $$P = \frac{1}{1 + e^{-(-0.72009)}} \approx \frac{1}{1 + e^{0.72009}} \approx \frac{1}{1 + 2.054} \approx \frac{1}{3.054} \approx 0.3275$$
-    So, the estimated probability of a non-member taking a trip longer
-    than 15 minutes on a regular day (not a holiday and not a long
-    weekend) is approximately 32.75%.
+    0)  nor part of a long weekend (`long_wknd_ind` is 0). The negative
+        value of the intercept suggests that, for this reference group,
+        the probability of having a trip duration exceeding 15 minutes
+        is less than 50%. To convert the log odds to probability, you
+        would use the logistic function
+        :$P(\text{avg duration} > 15 | \text{non-member, non-holiday, non-long weekend}) = \frac{1}{1 + e^{0.72009}}$We
+        can calculate the exact probability:
+        $$P = \frac{1}{1 + e^{-(-0.72009)}} \approx \frac{1}{1 + e^{0.72009}} \approx \frac{1}{1 + 2.054} \approx \frac{1}{3.054} \approx 0.3275$$
+        So, the estimated probability of a non-member taking a trip
+        longer than 15 minutes on a regular day (not a holiday and not a
+        long weekend) is approximately 32.75%.
 -   **Membership (`mem1`, `-0.88294`)**: The negative coefficient for
     **`mem1`** indicates that BIXI members are less likely to have trips
     that exceed 15 minutes on average, compared to non-members. The odds
@@ -335,57 +335,224 @@ summary(glm_seasonal_weather_2)
     to be considered, or specific marketing strategies might be
     implemented to boost ridership during these seasons.
 
-# Research Question 3: What variables ... ?
+# Research Question 3: What variables impacts the porportion of trips in the morning versus in the evening and in what way ?
 
-**Objective of Analysis:**
+**Objective of Analysis:** The goal of this analysis is to understand
+what variables influence the repartition of the trips throughout the
+day. Knowing this would help to better forecast the demand for bikes
+across the bixi system.
+
+Before starting the analysis, it is important to know that our datasets
+has 57.76% of its trips in the afternoon.
+
+```{r}
+sum(df_main$n_PM)/sum(df_main$n_tot)
+```
 
 ## Variables Selection
 
+Some variables that would be interesting to investigate are the
+following:
+
+`mem` : Membership indicator
+
+`wknd_ind` : Indicator of weekend
+
+`season` : Categorical variable with autumn, summer and fall
+
+`temp` : Temperature in degrees celcius
+
+`rain` : Precipitation in mm
+
+`North_South` : Indicator of cardinality compared to parc lafontaine
+
+`West_East`: Indicator of cardinality compared to parc lafontaine
+
+`Metro_ind` : Indicator of metro station nearby
+
 **Correlation:**
 
-Let's take a quick look at the correlation between our numerical
-variables to estimate the effect of collinearity.
+The correlation between the variables selected above was already tested
+via multicollinearity tests like VIF in previous analysis and did not
+show source of concern.
 
-```{r cor, echo=FALSE}
-cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
+**Interest variable:**
+
+Our interest variable for this question is the proportion of trips in
+the afternoon compared to the total number of trips. Since `n_PM` is a
+count we expect a poisson like distribution. To obtain a rate we will
+use the variable `n_tot` as an offset.
+
+```{r interest variable}
+hist(df_main$n_PM, breaks = 30)
 ```
+
+```{r dispersion}
+mean(df_main$n_PM)
+var(df_main$n_PM)
+```
+
+We observe some big disparities between the mean and variance of the
+variable `n_PM` which could lead to some overdispersion in our model.
+Some formal test will be explored in the model part.
 
 ## Model
 
 ```{r model_3, echo=FALSE}
+mod.poi <- glm(n_PM ~ mem + wknd_ind +season + temp + rain + North_South  + West_East + Metro_ind + offset(log(n_tot)) , data = df_main, family = poisson(link = "log"))
 
+summary(mod.poi)
+
+```
+
+```{r}
+# Deviance based
+mod.poi$deviance/mod.poi$df.residual
+
+# Based on Pearon X2 statistic
+sum(residuals(mod.poi, type = "pearson")^2)/mod.poi$df.residual
+```
+
+Once the covariates and offset are taken into consideration, we seem to
+be more in a case of underdispersion since theta is smaller than 1. For
+this reason, we will explore a quasipoisson distribution in order to
+increase flexibility and allow the mean to be different from the
+variance.
+
+```{r}
+mod.quasi <- glm(n_PM ~ mem + wknd_ind +season + temp + rain + North_South  + West_East + Metro_ind + offset(log(n_tot)) , data = df_main, family = quasipoisson)
+summary(mod.quasi)
+```
+
+```{r}
+Anova(mod.quasi, type = 3)
 ```
 
 ## Interpretation
 
-**Overall Model** R squared, F-stat
+**Overall Model** We observe that the deviation parameter of the model
+is estimated to be 0.68 which means that the means given the covariates
+is bigger than its variance. According to the Anova command, all
+variables included in the model are significant, once adjusted for all
+the covariates, except for `metro_ind`
 
-**Intercept** :
+**Intercept** : -0.605 can be interpreted as the log average rate of
+trip in the afternoon when all covariates have values of zero.
+
+In other words, this is the average rate of trip in the afternoon for
+non-member, during the weekday, in fall, when temperature is zero
+degrees celcius, no precipitation, with rental location north east of
+parc lafontaine and at an acces point that as no metro station nearby
+which is exp(-0.605) = 54.6%.
+
+**Membership :** 0.039 is a positive coefficient hence membership
+increase the rate of trip in the afternoon, on average, when all else is
+being held constant by a factor of exp(0.039) = 1.039 which means an
+increase of about 4% .
+
+**Weekend:** 0.022 is a positive coefficient hence weekend increase the
+rate of trip in the afternoon, on average, when all else is being held
+constant by a factor of exp(0.022) = 1.022 which means an increase of
+about 2% .
+
+**Season:** Spring's coefficient is 0.181 and summer's is 0.005 meaning
+that they both have an increase in rate of trip in the afternoon on
+average compared to fall when all else is being held constant. This
+increase is of a factor of exp(0.181) = 1.198 and exp(0.005) = 1.005
+respectively for both season.
+
+**Temperature:** -0.002 which means that a one degree celcius increase
+in temperature results in a decrease in rate of afternoon trips on
+average when all else is being held constant. This decrease is of a
+factor of exp(-0.002) = 0.998.
+
+**Precipitation :**- rain coefficient is also -0.002 hence its
+interpretation is the same as for temperature except that the decrease
+is for each additional milliliters of rain.
+
+**Cardinality North-South:** 0.041 is a positive coefficient hence
+departure from bixi station south of parc lafontaine have a higher rate
+of trip in the afternoon, on average, when all else is being held
+constant by a factor of exp(0.041) = 1.041 which means an increase of
+about 4% compared to northern departure.
+
+**Cardinality West-East:** -0.017 is a positive coefficient hence
+departure from bixi station west of parc lafontaine have a lower rate of
+trip in the afternoon, on average, when all else is being held constant
+by a factor of exp(-0.017) = 0.983 which means a decrease of about 2%
+compared to eastern departure.
+
+**Metro station nearby:** coefficient is 0.009 which although not being
+significatively differrent from zero can be interpreted as having a
+metro station nearby increase the rate of trip in the afternoon, on
+average, when all else is being held constant by a factor of exp(0.009)
+= 1.009 .
 
 ## Business Implications:
 
-1.  **Promotion and Marketing**:
+The main takeaways from this model are:
 
-2.  **Resource Allocation**:
+-    Members have a higher rate of trips in the afternoon. Knowing that
+    members account for most of the trips, it can explain why there is
+    more trip in the afternoon in general.
 
-3.  **Pricing Strategy**:
+```{r, echo=FALSE}
+df_main %>%    group_by(mem) %>%    summarize(n_tot = sum(n_tot))
+```
+
+-   There will be an increase demand on the system in the afternoon
+    during the weekend and an increase demand on the system in the
+    morning during the weekdays. This could reflect the usage of people
+    using bixi to commute to work.
+
+-   There is a strong increase in rate of trips in the afternoon during
+    the season of spring, this could be seen as an eagerness for bike
+    after winter since afternoon trips seems to be more associated with
+    leisure than commuting. Another hypothesis would be that during
+    spring the mornings are too cold to bike most often.
+
+-   Following the above hypothesis, as temperature increase, there seems
+    to be an increase of rate of trip in the morning. Keep in mind that
+    this relation is only true for a given season.
+
+-   Finally concerning the general flow of trips, there seems to be a
+    higher rate of departure from stations North West to Parc Lafontaine
+    in the morning than in the afternoon. Similarly, we have the inverse
+    relation for station in the South East. This means that from an
+    operational standpoint, there might be some displacement of bikes
+    required from stations to stations depending on the moment of the
+    day to keep a balanced fleet of bikes all over the system.
 
 # Research Question 4: Are there significant differences in bike trips counts between weekdays and weekends?
 
-**Objective of Analysis:** 
-The objective of the analysis is to quantify and assess the differences in ridership during weekend and weekdays. The analysis would generate insights into the  patterns of ridership that could be useful for operational planning, resource allocation, or service improvements.
+**Objective of Analysis:** The objective of the analysis is to quantify
+and assess the differences in ridership during weekend and weekdays. The
+analysis would generate insights into the patterns of ridership that
+could be useful for operational planning, resource allocation, or
+service improvements.
 
 ## Variables Selection
 
-To evaluate how time of the day influences trip count, we need to create a model that accounts for the day being a weekend or a weekday. The would check if the total trip count as a possion distribution using chisquare test.
+To evaluate how time of the day influences trip count, we need to create
+a model that accounts for the day being a weekend or a weekday. The
+would check if the total trip count as a possion distribution using
+chisquare test.
+
 ```{r}
 chisq.test(table(df_main$n_tot))
 ```
-We can also see from the histogram that the response variable is skewed to the right. It’s clear that linear regression would not be appropriate in this context. We can fit the Poisson regression model using the glm function, specifying that the distribution is poisson. We’ll start by fitting the model which includes all explanatory variable:
+
+We can also see from the histogram that the response variable is skewed
+to the right. It's clear that linear regression would not be appropriate
+in this context. We can fit the Poisson regression model using the glm
+function, specifying that the distribution is poisson. We'll start by
+fitting the model which includes all explanatory variable:
+
 ```{r}
 hist(df_main$n_tot, breaks = 20, main = "Histogram of n_tot", xlab = "n_tot")
 
 ```
+
 ## Model
 
 ```{r model_4, echo=FALSE}
@@ -406,26 +573,49 @@ summary(total_model)
 
 **Overall Model** R squared, F-stat
 
-**Intercept** : 
+**Intercept** :
 
-The intercept (3.004083) represents the log count of the total number of trips on weekdays.In other words, the number of trips on weekdays is exp(3.004083)=20.
+The intercept (3.004083) represents the log count of the total number of
+trips on weekdays.In other words, the number of trips on weekdays is
+exp(3.004083)=20.
 
-**Weekend** : 
+**Weekend** :
 
-βweekend = -0.040604: number of trips is higher on weekdays than weekend. More specifically,  the mean number of trips on weekend is is exp(-0.040604) = 0.96 times those on weekdays. In other words, the mean number of trips on weekend is 4% lower than that in weekdays.The p-value is 3.37e-16 which is less that any acceptable value of alpha which represent that the difference in trip number during weekend and weekdays is statistically different.
+weekend = -0.040604: number of trips is higher on weekdays than weekend.
+More specifically, the mean number of trips on weekend is is
+exp(-0.040604) = 0.96 times those on weekdays. In other words, the mean
+number of trips on weekend is 4% lower than that in weekdays.The p-value
+is 3.37e-16 which is less that any acceptable value of alpha which
+represent that the difference in trip number during weekend and weekdays
+is statistically different.
 
 ## Business Implications:
 
-**Resource Allocation**: Given the higher demand during weekdays, businesses or services dependent on these trips may need to allocate more resources, such as bikes, maintenance, or staff, during these periods. 
+**Resource Allocation**: Given the higher demand during weekdays,
+businesses or services dependent on these trips may need to allocate
+more resources, such as bikes, maintenance, or staff, during these
+periods.
 
-**Pricing Strategies**: If the service is fee-based, adjusting pricing strategies to account for the difference in demand between weekdays and weekends could be considered. For instance, offering promotions or discounts during lower demand days (weekends) to attract more users. 
+**Pricing Strategies**: If the service is fee-based, adjusting pricing
+strategies to account for the difference in demand between weekdays and
+weekends could be considered. For instance, offering promotions or
+discounts during lower demand days (weekends) to attract more users.
 
-**Marketing Efforts**: Tailoring marketing campaigns or efforts to encourage more weekend usage could be explored. Promoting special events, family packages, or leisure-oriented offers during weekends might help in increasing weekend ridership. 
+**Marketing Efforts**: Tailoring marketing campaigns or efforts to
+encourage more weekend usage could be explored. Promoting special
+events, family packages, or leisure-oriented offers during weekends
+might help in increasing weekend ridership.
 
-**Operational Optimization**: During weekends, operational adjustments could be made to enhance the user experience. For instance, ensuring bike availability, adjusting operating hours, or implementing user-friendly initiatives to attract more weekend users. 
+**Operational Optimization**: During weekends, operational adjustments
+could be made to enhance the user experience. For instance, ensuring
+bike availability, adjusting operating hours, or implementing
+user-friendly initiatives to attract more weekend users.
 
-**Service Enhancements**: Understanding the differences in usage patterns can guide service improvements. Addressing any barriers that might discourage weekend ridership, such as safety concerns, parking availability, or service accessibility, could be a focus for enhancements.
-
+**Service Enhancements**: Understanding the differences in usage
+patterns can guide service improvements. Addressing any barriers that
+might discourage weekend ridership, such as safety concerns, parking
+availability, or service accessibility, could be a focus for
+enhancements.
 
 # Limitations and shortcomings
 
