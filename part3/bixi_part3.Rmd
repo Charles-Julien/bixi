@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r message = FALSE, warning=FALSE, include = FALSE, echo=FALSE}
 # Import (The fewer the better)
-
+#install.packages('AER')
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
@@ -98,7 +98,7 @@ df_main <- df_main %>% mutate(
               
               week_num = as.numeric(strftime(date, format = "%V")),
  
-
+              hot_weather_ind = factor(ifelse(temp > 15, 'Hot', 'Cold')),
 # create a new variable indicating whether the average daily trip duration exceeds 15 minutes, and explore models for this new variable.
 
               avg_15_ind = factor(ifelse(avg>15,1,0))
@@ -134,6 +134,91 @@ that support your discussion.
 # Business/Research questions
 
 The target variables is number of rentals (total, AM, and PM)
+
+## Preliminary T-tests
+
+We decided to look at t-tests as a means of feature selection when
+assessing the importance of our variables.
+
+Using a two sample t test, we further assessed the impact of membership
+on average trip duration, the total number of trips and the delta in
+trips from morning to afternoon for members in comparison to
+non-members. The goal is to determine whether members behave differently
+from non-members prior to doing a deep dive on membership. In all cases,
+the null hypothesis was that the average of the aforementioned variables
+did not change between members and non-members. Through this analysis,
+we discovered that average trip duration for non-members is 16.58
+minutes in comparison to members at 14.16 minutes, members take on
+average 31 trips per station in comparison to 7 per station for
+non-members and both take more trips in the PM than the AM however that
+difference is larger for members than non-members. Furthermore, we also
+tested the binary outcome of membership's impact on a station having an
+average trip duration greater than 15 minutes and we noted that
+membership again is significant using the McNemar test.
+
+```{r}
+t.test(avg ~ mem, data = df_main, var.equal = TRUE)
+t.test(n_tot ~ mem, data = df_main, var.equal = TRUE)
+t.test(n_AM_PM_delta ~ mem, data = df_main, var.equal = TRUE)
+mcnemar.test(df_main$mem , df_main$avg_15_ind)
+```
+
+Moving on to analyzing ridership data during holidays vs non holidays as
+well as during the week vs non weekend we can arrive to similar
+conclusions using a 5% significance level. The data shows that on
+holidays in comparison to non holidays, and on weekends in comparison to
+weekdays riders take slightly longer trips and more afternoon trips
+during holidays as well as on weekends. This difference is statistically
+significant. When comparing to the total number of trips, in both cases
+of weekends and holidays, we did notice a very high p-value and thus
+failed to reject the null hypothesis that there is a significant
+difference in total number of trips in both cases. As such, with regards
+to holidays and weekends, we recommend strategies focusing on the time
+of day and average duration of rides as opposed to total number of trips
+which would be harder to predict.
+
+```{r}
+t.test(avg ~ holiday, data = df_main, var.equal = TRUE)
+t.test(n_tot ~ holiday, data = df_main, var.equal = TRUE)
+t.test(n_AM_PM_delta ~ holiday, data = df_main, var.equal = TRUE)
+mcnemar.test(df_main$holiday , df_main$avg_15_ind)
+```
+
+```{r}
+t.test(avg ~ wknd_ind, data = df_main, var.equal = TRUE)
+t.test(n_tot ~ wknd_ind, data = df_main, var.equal = TRUE)
+t.test(n_AM_PM_delta ~ wknd_ind, data = df_main, var.equal = TRUE)
+mcnemar.test(df_main$wknd_ind , df_main$avg_15_ind)
+```
+
+Finally, we observed the impact of the weather of the different
+outcomes. More specifically, we looked at the difference between raining
+periods and warmer weather and non raining periods and colder weather
+respectively on average trip duration, the total number of rides and
+taking more rides in the afternoon. As expected in colder periods or
+rainy days had shorter average ride duration, less total number of rides
+and less and less afternoon rides than their respective counter parts in
+the t test.
+
+```{r}
+t.test(avg ~ rain_ind, data = df_main, var.equal = TRUE)
+t.test(n_tot ~ rain_ind, data = df_main, var.equal = TRUE)
+t.test(n_AM_PM_delta ~ rain_ind, data = df_main, var.equal = TRUE)
+mcnemar.test(df_main$rain_ind , df_main$avg_15_ind)
+```
+
+```{r}
+t.test(avg ~ hot_weather_ind, data = df_main, var.equal = TRUE)
+t.test(n_tot ~ hot_weather_ind, data = df_main, var.equal = TRUE)
+t.test(n_AM_PM_delta ~ hot_weather_ind, data = df_main, var.equal = TRUE)
+mcnemar.test(df_main$hot_weather_ind , df_main$avg_15_ind)
+```
+
+With this information at hand, we can perform multiple regression
+accounting for other variables of interest while also focusing on
+membership, time of the week and weather. We can further recommend Bixi
+to explore dynamic pricing with regards to weather because trips go up
+significantly in warmer periods.
 
 # Pre-processing
 
@@ -245,6 +330,26 @@ summary(glm_membership)
     during these times to accommodate the higher demand for leisurely
     rides.
 
+Furthermore, we also performed an Anova test between the full model and
+a reduced model containing all full model variables except for
+membership data. The goal here is to determine the addition of
+membership significantly improves the model's fit. As we can see below
+in the reduced model, the coefficients and significance levels do not
+change much when removing membership which suggests no multicollinearity
+in the data. The Anova further confirms the benefit of membership in
+predicting stations with average trip durations greater than 15 minutes,
+by rejecting at a 5% significance level the null hypothesis that that
+the performance between the full and nested model is the same.
+
+```{r}
+glm_membership_reduced <- glm(avg_15_ind ~ holiday + long_wknd_ind, family = binomial, data = df_main)
+summary(glm_membership_reduced)
+```
+
+```{r}
+anova(glm_membership_reduced,glm_membership,test="LRT")
+```
+
 # Research Question 2: How do the seasonal variation in weather affect the total number of trip ?
 
 **Objective of Analysis:** Evaluate how seasonal weather patterns
@@ -334,6 +439,22 @@ summary(glm_seasonal_weather_2)
     to the baseline season suggests that additional factors might need
     to be considered, or specific marketing strategies might be
     implemented to boost ridership during these seasons.
+
+
+```{r}
+# Poisson model
+glm_seasonal_weather_full <- glm(n_tot ~ mem + holiday + temp + rain + season, family = poisson, data = df_main)
+dispersiontest(glm_seasonal_weather)
+
+# Negative Binomial model
+glm_seasonal_weather_2_full <- glm.nb(n_tot ~ mem + holiday + temp + rain + season, data = df_main)
+summary(glm_seasonal_weather_2)
+```
+
+```{r}
+anova(glm_seasonal_weather,glm_seasonal_weather_full,test="LRT")
+anova(glm_seasonal_weather_2_full,glm_seasonal_weather_2,test="LRT")
+```
 
 # Research Question 3: What variables impacts the porportion of trips in the morning versus in the evening and in what way ?
 
@@ -582,7 +703,7 @@ exp(3.004083)=20.
 **Weekend** :
 
 weekend = -0.040604: number of trips is higher on weekdays than weekend.
-More specifically, the mean number of trips on weekend is is
+More specifically, the mean number of trips on weekend is 
 exp(-0.040604) = 0.96 times those on weekdays. In other words, the mean
 number of trips on weekend is 4% lower than that in weekdays.The p-value
 is 3.37e-16 which is less that any acceptable value of alpha which
@@ -611,11 +732,15 @@ could be made to enhance the user experience. For instance, ensuring
 bike availability, adjusting operating hours, or implementing
 user-friendly initiatives to attract more weekend users.
 
+
 **Service Enhancements**: Understanding the differences in usage
 patterns can guide service improvements. Addressing any barriers that
 might discourage weekend ridership, such as safety concerns, parking
 availability, or service accessibility, could be a focus for
 enhancements.
+
+# Business Question 5: 
+
 
 # Limitations and shortcomings
 
