@@ -131,6 +131,10 @@ that support your discussion.
 
 # Introduction
 
+In the dynamic realm of urban mobility, the Bixi public cycling service plays a pivotal role in providing a sustainable and accessible transportation alternative. As consultants entrusted with a comprehensive analysis of Bixi's operational data, our approach integrates sophisticated statistical techniques, specifically Generalized Linear Models (GLM), to derive actionable insights. This report unfolds the findings derived from GLM applications, shedding light on critical aspects such as trip durations, ridership patterns, and the impact of external factors. 
+
+Our analytical scope encompasses a multifaceted examination of factors influencing trip durations, total trip counts, and the temporal dynamics of ridership. By applying GLM to address the identified research questions, we aim to unearth insights that are instrumental in shaping strategic decisions for Bixi's operational enhancements. Central to our methodology is the implementation of Generalized Linear Models, a statistical framework adept at capturing complex relationships within diverse datasets. Our application of GLM is tailored to respond to specific research questions, providing a granular understanding of the nuanced dynamics at play in Bixi's operational landscape.
+
 # Business/Research questions
 
 The target variables is number of rentals (total, AM, and PM)
@@ -654,15 +658,6 @@ service improvements.
 
 ## Variables Selection
 
-To evaluate how time of the day influences trip count, we need to create
-a model that accounts for the day being a weekend or a weekday. The
-would check if the total trip count as a possion distribution using
-chisquare test.
-
-```{r}
-chisq.test(table(df_main$n_tot))
-```
-
 We can also see from the histogram that the response variable is skewed
 to the right. It's clear that linear regression would not be appropriate
 in this context. We can fit the Poisson regression model using the glm
@@ -744,10 +739,19 @@ enhancements.
 
 # Limitations and shortcomings
 
-Autocorrelation of data, the observations are not independant, as seens
+**Autocorrelation of data**:  the observations are not independant, as seens
 in our previous analysis.
 
+**External Factors and Generalizability**: The analysis primarily focuses on internal variables within the dataset, overlooking potential external influences such as changes in city infrastructure or broader economic conditions. This limits the generalizability of the results to broader contexts.
+
+**Temporal Dynamics and Long-Term Trends**: The study's insights are confined to the timeframe for year 2021, potentially missing long-term shifts in user behavior or external factors. The temporal dynamics of the bike-sharing service may evolve beyond the study period.
+
+
 # Conclusion
+
+In conclusion, the examination of Bixi's operational data utilizing Generalized Linear Models (GLM) has unveiled pivotal insights that can strategically reshape the bike-sharing service. The analysis has pinpointed the profound impact of weather conditions, seasonal variations, and membership dynamics on ridership behavior. This newfound understanding positions Bixi to implement targeted strategies, optimizing resource allocation, and addressing specific user preferences to enhance the overall service experience. 
+
+Strategically, Bixi is poised to benefit from dynamic resource allocation informed by weather patterns, ensuring optimal bike distribution and efficient staff scheduling. The identification of seasonal ridership nuances prompts tailored marketing initiatives, providing an opportunity to counteract dips in spring and summer ridership. Moreover, the strategic refinement of membership structures aligns with user preferences, enhancing engagement and satisfaction. Capitalizing on the surge in longer trips during holidays and extended weekends through targeted campaigns further positions Bixi to maximize user engagement and solidify its position in the competitive urban mobility sector.
 
 # Contribution
 
