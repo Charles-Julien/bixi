@@ -574,12 +574,17 @@ enhancements.
 
 # Limitations and shortcomings
 
-**Autocorrelation of data**:  the observations are not independant, as seens
-in our previous analysis.
+**Autocorrelation of data**: The observations in the dataset are not independent, as seen in previous analyses. This autocorrelation can impact the validity of statistical tests and models, potentially leading to biased or inaccurate conclusions.
 
 **External Factors and Generalizability**: The analysis primarily focuses on internal variables within the dataset, overlooking potential external influences such as changes in city infrastructure or broader economic conditions. This limits the generalizability of the results to broader contexts.
 
 **Temporal Dynamics and Long-Term Trends**: The study's insights are confined to the timeframe for year 2021, potentially missing long-term shifts in user behavior or external factors. The temporal dynamics of the bike-sharing service may evolve beyond the study period.
+
+**Model Specificity**: The use of Generalized Linear Models (GLMs) is tailored for the specific dataset and research questions at hand. While GLMs are versatile, they might not capture all the nuances or complexities of the data, such as non-linear relationships or interactions between variables that a different modeling approach could reveal.
+    
+**Sensitivity to Parameter Choices**: GLMs involve decisions about which link function to use and how to structure the model. Different choices can lead to different interpretations, and the report does not discuss the sensitivity of the results to these choices.
+    
+**Assumptions of the Modeling Approach**: Every statistical model, including GLMs, comes with underlying assumptions (e.g., about the distribution of errors). If these assumptions are violated, it can lead to biased results. The report does not explicitly discuss how these assumptions were tested or met.
 
 
 # Conclusion
