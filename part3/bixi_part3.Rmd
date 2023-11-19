@@ -648,7 +648,8 @@ df_main %>%    group_by(mem) %>%    summarize(n_tot = sum(n_tot))
     required from stations to stations depending on the moment of the
     day to keep a balanced fleet of bikes all over the system.
 
-# Research Question 4: Are there significant differences in bike trips counts between weekdays and weekends?
+# Research Question 4: How do bike trips counts differ between weekdays and weekends? 
+
 
 **Objective of Analysis:** The objective of the analysis is to quantify
 and assess the differences in ridership during weekend and weekdays. The
@@ -687,12 +688,10 @@ summary(total_model)
 
 ## Interpretation
 
-**Overall Model** R squared, F-stat
-
 **Intercept** :
 
 The intercept (3.004083) represents the log count of the total number of
-trips on weekdays.In other words, the number of trips on weekdays is
+trips on weekdays.In other words, the expected number of trips on weekdays, on average, is
 exp(3.004083)=20.
 
 **Weekend** :
@@ -734,7 +733,6 @@ might discourage weekend ridership, such as safety concerns, parking
 availability, or service accessibility, could be a focus for
 enhancements.
 
-# Business Question 5: 
 
 
 # Limitations and shortcomings
@@ -751,7 +749,7 @@ in our previous analysis.
 
 In conclusion, the examination of Bixi's operational data utilizing Generalized Linear Models (GLM) has unveiled pivotal insights that can strategically reshape the bike-sharing service. The analysis has pinpointed the profound impact of weather conditions, seasonal variations, and membership dynamics on ridership behavior. This newfound understanding positions Bixi to implement targeted strategies, optimizing resource allocation, and addressing specific user preferences to enhance the overall service experience. 
 
-Strategically, Bixi is poised to benefit from dynamic resource allocation informed by weather patterns, ensuring optimal bike distribution and efficient staff scheduling. The identification of seasonal ridership nuances prompts tailored marketing initiatives, providing an opportunity to counteract dips in spring and summer ridership. Moreover, the strategic refinement of membership structures aligns with user preferences, enhancing engagement and satisfaction. Capitalizing on the surge in longer trips during holidays and extended weekends through targeted campaigns further positions Bixi to maximize user engagement and solidify its position in the competitive urban mobility sector.
+Strategically, Bixi is poised to benefit from dynamic resource allocation informed by weather patterns, ensuring optimal bike distribution and efficient staff scheduling. Moreover, the strategic refinement of membership structures aligns with user preferences, enhancing engagement and satisfaction. Capitalizing on the surge in longer trips during holidays and extended weekends through targeted campaigns further positions Bixi to maximize user engagement and solidify its position in the competitive urban mobility sector.
 
 # Contribution
 
