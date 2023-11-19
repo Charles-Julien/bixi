@@ -178,7 +178,7 @@ summary(glm_membership)
 Furthermore, we also performed an Anova test between the full model and
 a reduced model containing all full model variables except for
 membership data. The goal here is to determine the addition of
-membership significantly improves the model's fit. 
+membership significantly improves the model's fit.  
 
 ```{r}
 glm_membership_reduced <- glm(avg_15_ind ~ holiday + wknd_ind, family = binomial, data = df_main)

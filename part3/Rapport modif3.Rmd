@@ -299,9 +299,16 @@ summary(glm_membership)
 ## Anova test
 
 Furthermore, we also performed an Anova test between the full model and
-a reduced model containing all full model variables except for
-membership data. The goal here is to determine the addition of
-membership significantly improves the model's fit.
+a reduced model. The reduced model in this case contains only the
+holiday and weekend indicator whereas the full model also includes
+membership in addition to the two variables. The goal here is to
+determine if the addition of membership significantly improves the
+model's fit. The test statistic is thus the difference in -2 times the
+log likelihood (-2LL) of the reduced as well as -2LL of the complete
+model with the null hypothesis being that the likelihood is the same and
+the alternate being that the likelihood is different. In essence, we
+want to determine if the addition of membership improves the likelihood
+of observing the data.
 
 ```{r}
 glm_membership_reduced <- glm(avg_15_ind ~ holiday + wknd_ind, family = binomial, data = df_main)
@@ -376,8 +383,9 @@ summary(glm_seasonal_weather_2)
     fits the data while penalizing for complexity.
 
 -   **Intercept**: The intercept ($\beta = 2.581791$) represents the log
-    count of the total number of trips when all other variables are zero. The IRR for the intercept cannot be interpreted in
-    the same way because it relates to the situation where all predictor
+    count of the total number of trips when all other variables are
+    zero. The IRR for the intercept cannot be interpreted in the same
+    way because it relates to the situation where all predictor
     variables are zero, which may not be meaningful for variables like
     temperature.
 
@@ -391,7 +399,8 @@ summary(glm_seasonal_weather_2)
     which is approximately 0.984. This indicates that for each
     additional millimeter of rainfall, the expected number of trips
     decreases by a factor of 0.984, or 1.6%. So, if rainfall increases
-    by 1 mm, the model predicts a 1.6% decrease in the number of trips holding else constant.
+    by 1 mm, the model predicts a 1.6% decrease in the number of trips
+    holding else constant.
 
 -   **Season (`seasonSpring`, `seasonSummer`)**:
 
@@ -415,8 +424,14 @@ summary(glm_seasonal_weather_2)
 -   During rainy days, demand is expected to drop, which could be a good
     time for scheduling maintenance work.
 
--   The observed reduction in trips during the spring and summer, when compared to the baseline season, indicates that there might be other influencing factors to consider. This observation is made under the assumption that temperature remains constant, which is unlikely to be accurate. In reality, trip frequency is probably not lower in the summer than in the fall. Therefore, it might be necessary to explore additional variables or implement targeted marketing strategies to enhance ridership in these seasons.
-## Anova test
+-   The observed reduction in trips during the spring and summer, when
+    compared to the baseline season, indicates that there might be other
+    influencing factors to consider. This observation is made under the
+    assumption that temperature remains constant, which is unlikely to
+    be accurate. In reality, trip frequency is probably not lower in the
+    summer than in the fall. Therefore, it might be necessary to explore
+    additional variables or implement targeted marketing strategies to
+    enhance ridership in these seasons. \## Anova test
 
 ```{r}
 # Poisson model
