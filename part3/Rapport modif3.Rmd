@@ -38,12 +38,7 @@ library(AER)
 
 # Set working directory to file location
 
-#df_raw = read.csv("bixi10.csv")
-#df_station = read.csv("2021_stations.csv")
-#df_main = left_join(df_raw,df_station,by = c("station"="pk"))
-#head(df_main)
-
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 df_raw = read.csv("./../src/bixi10.csv")
 df_station = read.csv("./../src/2021_stations.csv")
 df_main = left_join(df_raw,df_station,by = c("station"="pk"))
@@ -236,39 +231,36 @@ summary(glm_membership)
 -   **Intercept (`-0.13473`)**: This is the log-odds of a trip exceeding
     15 minutes when all predictors (mem, holiday, and wknd_ind) are at
     their reference level (likely non-members, non-holiday, and on
-    weekdays).**Odds (Intercept)**:
-    $e^{-0.13473} = 0.87395$.**Probability (Intercept)**:
-    $\frac{0.87395}{1 + 0.87395} = 0.4664$ (approximately 46.64%). This
-    means when all independent variables are at their reference levels,
-    the probability of a trip exceeding 15 minutes is approximately
-    46.64%.
+    weekdays).**Odds**: $e^{-0.13473} = 0.87395$.**Probability
+    (Intercept)**: $\frac{0.87395}{1 + 0.87395} = 0.4664$ (approximately
+    46.64%). This means that when all independent variables are at their
+    reference levels, the probability of a trip exceeding 15 minutes is
+    approximately 46.64%.
 
 -   **Membership (`mem1`, `-0.88328`)**: The log-odds of a trip
     exceeding 15 minutes is 0.88328 units lower for members compared to
     non-members, holding other variables constant (Non-holidays and
-    weekdays). **Odds**: $e^{-0.88328} = 0.41342$. **Probability**:
-    $\frac{0.41342}{1 + 0.41342} = 0.2925$ (approximately 29.25%). This
-    means that the odds of a trip exceeding 15 minutes for members are
-    about 0.41 times the odds for non-members, translating to a
-    probability of approximately 29.25%.
+    weekdays). **Odds ratio**: $e^{-0.88328} = 0.41342$. This means that
+    the odds of a trip exceeding 15 minutes for members are on average
+    0.41 times the odds for non-members holding all else constant. When
+    all variables are at their reference level except membership, we
+    expect a probability of seeing a longer trip of
+    $\frac{e^(-0.13473-0.88328)}{1 + e^(-0.13473-0.88328)} = 0.265$
 
 -   **Holiday (`holiday1`, `0.60985`)**: The log-odds of a trip
     exceeding 15 minutes is 0.60985 units higher during holidays
-    compared to non-holidays, holding other variables constant.
-    **Odds**: $e^{0.60985} = 1.84016$. **Probability**:
-    $\frac{1.84016}{1 + 1.84016} = 0.6479$ (approximately 64.79%). This
-    indicates that the odds of a trip exceeding 15 minutes on holidays
-    are about 1.84 times higher than on non-holidays, resulting in a
-    probability of approximately 64.79%.
+    compared to non-holidays, holding other variables constant. **Odds
+    ratio**: $e^{0.60985} = 1.84016$. This indicates that the odds of a
+    trip exceeding 15 minutes on holidays are on average 1.84 times
+    higher than on non-holidays when other covariates are fixed.
 
 -   **Weekend (`wknd_indWeekend`, `0.55915`)**:The log-odds of a trip
     exceeding 15 minutes is 0.55915 units higher during weekends
     compared to weekdays, holding other variables constant (during
-    week-end on non-holidays times). **Odds**: $e^{0.55915} = 1.74919$.
-    **Probability**: $\frac{1.74919}{1 + 1.74919} = 0.6363$
-    (approximately 63.63%). This means that the odds of a trip exceeding
-    15 minutes on weekends are about 1.75 times higher than on weekdays,
-    translating to a probability of approximately 63.63%.
+    week-end on non-holidays times). **Odds ratio**:
+    $e^{0.55915} = 1.74919$. This means that the odds of a trip
+    exceeding 15 minutes on weekends are on average 1.75 times higher
+    than on weekdays when other covariates are constant.
 
 -   **Statistical Significance**: In this model, all the p-values are
     under the 5% level of significance, indicating that the relationship
@@ -298,44 +290,43 @@ summary(glm_membership)
 
 ## Anova test
 
-Furthermore, we also performed an Anova test between the full model and
-a reduced model. The reduced model in this case contains only the
-holiday and weekend indicator whereas the full model also includes
-membership in addition to the two variables. The goal here is to
-determine if the addition of membership significantly improves the
+Furthermore, we also performed an Anova test between a full model and
+a reduced model. The reduced model in this case is the model from above 
+whereas the full model also includes the covariate season. The goal here is to
+determine if the addition of season significantly improves the
 model's fit. The test statistic is thus the difference in -2 times the
 log likelihood (-2LL) of the reduced as well as -2LL of the complete
 model with the null hypothesis being that the likelihood is the same and
 the alternate being that the likelihood is different. In essence, we
-want to determine if the addition of membership improves the likelihood
+want to determine if the addition of season improves the likelihood
 of observing the data.
 
 ```{r}
-glm_membership_reduced <- glm(avg_15_ind ~ holiday + wknd_ind, family = binomial, data = df_main)
-anova(glm_membership_reduced,glm_membership,test="LRT")
+glm_membership_full <- glm(avg_15_ind ~ mem + holiday + wknd_ind + season, family = binomial, data = df_main)
+anova(glm_membership,glm_membership_full,test="LRT")
 ```
 
--   Model 1 has 9997 degrees of freedom. Model 2 has 9996 degrees of
-    freedom, which is one less than Model 1, indicating that one
-    additional parameter (here, mem) was included in Model 2.
--   Model 1 has a residual deviance of 13311. Model 2 has a residual
-    deviance of 12861, which is lower, suggesting a better fit to the
+-   Model 2 has 9994 degrees of freedom. Model 1 has 9996 degrees of
+    freedom, which is two more than Model 2, indicating that two
+    additional parameter (here, season(3 levels)) was included in Model 2.
+-   Model 1 has a residual deviance of 12861 Model 2 has a residual
+    deviance of 12574, which is higher, suggesting a better fit to the
     data than Model 1.
--   The deviance reduction from Model 1 to Model 2 is 450.23. This is
+-   The deviance reduction from Model 1 to Model 2 is 286.68 This is
     the difference in the Resid. Dev between the two models,
-    representing the improvement in fit due to including the mem
+    representing the improvement in fit due to including the season
     variable.
 -   The p-value associated with this deviance reduction is less than
     2.2e-16, which is extremely small and indicates that the improvement
-    in the model fit by including mem is statistically significant.
+    in the model fit by including season is statistically significant.
 
-The addition of the mem variable to the model significantly improves the
+The addition of the season variable to the model significantly improves the
 model's ability to predict whether a trip will last longer than 15
 minutes. The very low p-value associated with the deviance reduction
-upon adding mem to the model confirms that membership status has a
+upon adding season to the model confirms that membership status has a
 statistically significant effect on the likelihood of a trip exceeding
 15 minutes, beyond what is explained by holiday and weekend indicators
-alone.
+alone. Thus, seasonality will be explored in the next model.
 
 # Research Question 2: How do the seasonal variation in weather affect the total number of trip ?
 
@@ -384,10 +375,8 @@ summary(glm_seasonal_weather_2)
 
 -   **Intercept**: The intercept ($\beta = 2.581791$) represents the log
     count of the total number of trips when all other variables are
-    zero. The IRR for the intercept cannot be interpreted in the same
-    way because it relates to the situation where all predictor
-    variables are zero, which may not be meaningful for variables like
-    temperature.
+    zero. This is on a day in fall where the temperature is zero and
+    there is no rain.
 
 -   **Temperature (`temp`)**: The incidence rate ratio (IRR) for
     temperature is $e^{0.031157}$, which is approximately 1.032. This
@@ -400,7 +389,7 @@ summary(glm_seasonal_weather_2)
     additional millimeter of rainfall, the expected number of trips
     decreases by a factor of 0.984, or 1.6%. So, if rainfall increases
     by 1 mm, the model predicts a 1.6% decrease in the number of trips
-    holding else constant.
+    holding all else constant.
 
 -   **Season (`seasonSpring`, `seasonSummer`)**:
 
@@ -431,7 +420,9 @@ summary(glm_seasonal_weather_2)
     be accurate. In reality, trip frequency is probably not lower in the
     summer than in the fall. Therefore, it might be necessary to explore
     additional variables or implement targeted marketing strategies to
-    enhance ridership in these seasons. \## Anova test
+    enhance ridership in these seasons.
+
+    ##  Anova test
 
 ```{r}
 # Poisson model
@@ -543,10 +534,10 @@ sum(residuals(mod.poi, type = "pearson")^2)/mod.poi$df.residual
 ```
 
 Once the covariates and offset are taken into consideration, we seem to
-be more in a case of underdispersion since theta is smaller than 1. For
-this reason, we will explore a quasipoisson distribution in order to
-increase flexibility and allow the mean to be different from the
-variance.
+be more in a case of underdispersion since the dispersion (k) is smaller
+than 1. For this reason, we will explore a quasipoisson distribution in
+order to increase flexibility and allow the mean to be different from
+the variance.
 
 ```{r}
 mod.quasi <- glm(n_PM ~ mem + wknd_ind +season + temp + rain + North_South  + West_East + Metro_ind + offset(log(n_tot)) , data = df_main, family = quasipoisson)
@@ -559,7 +550,7 @@ Anova(mod.quasi, type = 3)
 
 ## Interpretation
 
-**Overall Model** We observe that the deviation parameter of the model
+**Overall Model** We observe that the dispersion parameter of the model
 is estimated to be 0.68 which means that the means given the covariates
 is bigger than its variance. According to the Anova command, all
 variables included in the model are significant, once adjusted for all
@@ -691,13 +682,11 @@ summary(total_model)
 
 ## Interpretation
 
-**Overall Model** R squared, F-stat
-
 **Intercept** :
 
-The intercept (3.004083) represents the log count of the total number of
-trips on weekdays.In other words, the number of trips on weekdays is
-exp(3.004083)=20.
+The intercept (3.004083) represents the expected log count of the total
+number of trips on weekdays.In other words, the expected number of trips
+on weekdays is exp(3.004083)=20.
 
 **Weekend** :
 
@@ -788,21 +777,20 @@ Strategically, Bixi is poised to benefit from dynamic resource
 allocation informed by weather patterns, ensuring optimal bike
 distribution and efficient staff scheduling. The identification of
 seasonal ridership nuances prompts tailored marketing initiatives,
-providing an opportunity to counteract dips in spring and summer
-ridership. Moreover, the strategic refinement of membership structures
-aligns with user preferences, enhancing engagement and satisfaction.
-Capitalizing on the surge in longer trips during holidays and extended
-weekends through targeted campaigns further positions Bixi to maximize
-user engagement and solidify its position in the competitive urban
-mobility sector.
+providing an opportunity to counteract dips in colder weather ridership.
+Moreover, the strategic refinement of membership structures aligns with
+user preferences, enhancing engagement and satisfaction. Capitalizing on
+the surge in longer trips during holidays and extended weekends through
+targeted campaigns further positions Bixi to maximize user engagement
+and solidify its position in the competitive urban mobility sector.
 
 # Contribution
 
-Charles Julien :
+Charles Julien : Business question 3, correction and integration of all parts
 
 Gabriel Jobert : Business question 1 and 2
 
 Chike Odenigbo : t-test, anova, added to feature engineering, part of
 conclusion
 
-Atul Sharma :
+Atul Sharma : Introduction and Research question 4
