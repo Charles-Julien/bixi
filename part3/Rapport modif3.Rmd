@@ -376,9 +376,7 @@ summary(glm_seasonal_weather_2)
     fits the data while penalizing for complexity.
 
 -   **Intercept**: The intercept ($\beta = 2.581791$) represents the log
-    count of the total number of trips when all other variables are zero
-    (which is not possible for temperature or season, but serves as a
-    reference point). The IRR for the intercept cannot be interpreted in
+    count of the total number of trips when all other variables are zero. The IRR for the intercept cannot be interpreted in
     the same way because it relates to the situation where all predictor
     variables are zero, which may not be meaningful for variables like
     temperature.
@@ -393,7 +391,7 @@ summary(glm_seasonal_weather_2)
     which is approximately 0.984. This indicates that for each
     additional millimeter of rainfall, the expected number of trips
     decreases by a factor of 0.984, or 1.6%. So, if rainfall increases
-    by 1 mm, the model predicts a 1.6% decrease in the number of trips.
+    by 1 mm, the model predicts a 1.6% decrease in the number of trips holding else constant.
 
 -   **Season (`seasonSpring`, `seasonSummer`)**:
 
@@ -417,11 +415,7 @@ summary(glm_seasonal_weather_2)
 -   During rainy days, demand is expected to drop, which could be a good
     time for scheduling maintenance work.
 
--   The unexpected decrease in trips during spring and summer compared
-    to the baseline season suggests that additional factors might need
-    to be considered, or specific marketing strategies might be
-    implemented to boost ridership during these seasons.
-
+-   The observed reduction in trips during the spring and summer, when compared to the baseline season, indicates that there might be other influencing factors to consider. This observation is made under the assumption that temperature remains constant, which is unlikely to be accurate. In reality, trip frequency is probably not lower in the summer than in the fall. Therefore, it might be necessary to explore additional variables or implement targeted marketing strategies to enhance ridership in these seasons.
 ## Anova test
 
 ```{r}
@@ -791,7 +785,7 @@ mobility sector.
 
 Charles Julien :
 
-Gabriel Jobert :
+Gabriel Jobert : Business question 1 and 2
 
 Chike Odenigbo : t-test, anova, added to feature engineering, part of
 conclusion
