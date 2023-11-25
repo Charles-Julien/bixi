@@ -231,15 +231,25 @@ summary(glm_membership)
 -   **Intercept (`-0.13473`)**: This is the log-odds of a trip exceeding
     15 minutes when all predictors (mem, holiday, and wknd_ind) are at
     their reference level (likely non-members, non-holiday, and on
+<<<<<<< HEAD
     weekdays).**Odds**: $e^{-0.13473} = 0.87395$.**Probability
     (Intercept)**: $\frac{0.87395}{1 + 0.87395} = 0.4664$ (approximately
     46.64%). This means that when all independent variables are at their
     reference levels, the probability of a trip exceeding 15 minutes is
     approximately 46.64%.
+=======
+    weekdays).**Odds ratio (Intercept)**:
+    $e^{-0.13473} = 0.87395$.**Probability (Intercept)**:
+    $\frac{0.87395}{1 + 0.87395} = 0.4664$ (approximately 46.64%). This
+    means when all independent variables are at their reference levels,
+    the probability of a trip exceeding 15 minutes is approximately
+    46.64%.
+>>>>>>> ab399c210b84b4094948cf81133cf30ddb803a6f
 
 -   **Membership (`mem1`, `-0.88328`)**: The log-odds of a trip
     exceeding 15 minutes is 0.88328 units lower for members compared to
     non-members, holding other variables constant (Non-holidays and
+<<<<<<< HEAD
     weekdays). **Odds ratio**: $e^{-0.88328} = 0.41342$. This means that
     the odds of a trip exceeding 15 minutes for members are on average
     0.41 times the odds for non-members holding all else constant. When
@@ -253,14 +263,38 @@ summary(glm_membership)
     ratio**: $e^{0.60985} = 1.84016$. This indicates that the odds of a
     trip exceeding 15 minutes on holidays are on average 1.84 times
     higher than on non-holidays when other covariates are fixed.
+=======
+    weekdays). **Odds ratio**: $e^{-0.88328} = 0.41342$. **Probability**:
+    $\frac{0.41342}{1 + 0.41342} = 0.2925$ (approximately 29.25%). This
+    means that the oods of a trip exceeding 15 minutes for members are
+    about 0.41 times the odds for non-members, translating to a
+    probability of approximately 29.25%.
+
+-   **Holiday (`holiday1`, `0.60985`)**: The log-odds of a trip
+    exceeding 15 minutes is 0.60985 units higher during holidays
+    compared to non-holidays, holding other variables constant.
+    **Odds ratio**: $e^{0.60985} = 1.84016$. **Probability**:
+    $\frac{1.84016}{1 + 1.84016} = 0.6479$ (approximately 64.79%). This
+    indicates that the odds of a trip exceeding 15 minutes on holidays
+    are about 1.84 times higher than on non-holidays, resulting in a
+    probability of approximately 64.79%.
+>>>>>>> ab399c210b84b4094948cf81133cf30ddb803a6f
 
 -   **Weekend (`wknd_indWeekend`, `0.55915`)**:The log-odds of a trip
     exceeding 15 minutes is 0.55915 units higher during weekends
     compared to weekdays, holding other variables constant (during
+<<<<<<< HEAD
     week-end on non-holidays times). **Odds ratio**:
     $e^{0.55915} = 1.74919$. This means that the odds of a trip
     exceeding 15 minutes on weekends are on average 1.75 times higher
     than on weekdays when other covariates are constant.
+=======
+    week-end on non-holidays times). **Odds ratio**: $e^{0.55915} = 1.74919$.
+    **Probability**: $\frac{1.74919}{1 + 1.74919} = 0.6363$
+    (approximately 63.63%). This means that the odds of a trip exceeding
+    15 minutes on weekends are about 1.75 times higher than on weekdays,
+    translating to a probability of approximately 63.63%.
+>>>>>>> ab399c210b84b4094948cf81133cf30ddb803a6f
 
 -   **Statistical Significance**: In this model, all the p-values are
     under the 5% level of significance, indicating that the relationship
