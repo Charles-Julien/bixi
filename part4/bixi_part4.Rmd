@@ -31,12 +31,14 @@ library(janitor)
 library(tibble)
 ```
 
-# Instruction 
-• Revisit the linear regression models explored in Part 2 of your project, this time allowing to
-capture the potential intra-station correlation.
-• Comment on findings and discuss the main takeaways from this analysis from a business
-perspective. Be sure to provide all relevant model outputs that support your discussion.
-• Discuss any shortcomings or limitations of the analyses carried out.
+# Instruction
+
+• Revisit the linear regression models explored in Part 2 of your
+project, this time allowing to capture the potential intra-station
+correlation. • Comment on findings and discuss the main takeaways from
+this analysis from a business perspective. Be sure to provide all
+relevant model outputs that support your discussion. • Discuss any
+shortcomings or limitations of the analyses carried out.
 
 ```{r load_data, include=FALSE}
 # Data loading
@@ -102,23 +104,53 @@ df_main <- df_main %>% mutate(
               
               date = as.Date(paste(year,mm,dd,sep="/")),
               
-              week_num = as.numeric(strftime(date, format = "%V")))
+              week_num = as.numeric(strftime(date, format = "%V")),
+ 
+              hot_weather_ind = factor(ifelse(temp > 15, 'Hot', 'Cold')),# create a new variable indicating whether the average daily trip duration exceeds 15 minutes, and explore models for this new variable.
+
+              avg_15_ind = factor(ifelse(avg>15,1,0)))
  
 ```
 
 # Introduction
 
-**Enhancing Urban Mobility Through Advanced Analytics: Unraveling Patterns in BIXI Data**
+**Enhancing Urban Mobility Through Advanced Analytics: Unraveling
+Patterns in BIXI Data**
 
-BIXI, the public cycling service, has emerged as a pivotal player in urban transportation, offering an accessible and eco-friendly mode of transportation that has reshaped urban mobility. Our commitment to understanding and improving urban transportation systems has led our consultant team to conduct an extensive analysis of BIXI's operational data. 
+BIXI, the public cycling service, has emerged as a pivotal player in
+urban transportation, offering an accessible and eco-friendly mode of
+transportation that has reshaped urban mobility. Our commitment to
+understanding and improving urban transportation systems has led our
+consultant team to conduct an extensive analysis of BIXI's operational
+data.
 
-This report builds upon our previous exploration of BIXI's data, focusing on the application of linear mixed models to uncover nuanced insights. Our objective is to provide a comprehensive analysis of factors influencing BIXI's performance, extending our investigation to three specific research questions (RQs). These RQs delve into the impact of meteorological conditions, temporal patterns, and user classifications on BIXI's revenue generation. 
+This report builds upon our previous exploration of BIXI's data,
+focusing on the application of linear mixed models to uncover nuanced
+insights. Our objective is to provide a comprehensive analysis of
+factors influencing BIXI's performance, extending our investigation to
+three specific research questions (RQs). These RQs delve into the impact
+of meteorological conditions, temporal patterns, and user
+classifications on BIXI's revenue generation.
 
-In this journey, we leverage advanced statistical techniques, particularly linear mixed models, to unravel complex relationships within the dataset. R, a powerful statistical tool, serves as our primary instrument for data analysis and modeling. Our findings aim to not only deepen the understanding of BIXI's dynamics but also provide actionable insights for enhancing operational efficiency.
+In this journey, we leverage advanced statistical techniques,
+particularly linear mixed models, to unravel complex relationships
+within the dataset. R, a powerful statistical tool, serves as our
+primary instrument for data analysis and modeling. Our findings aim to
+not only deepen the understanding of BIXI's dynamics but also provide
+actionable insights for enhancing operational efficiency.
 
-The central RQs explored in this report include the assessment of the seasonal impact on revenue, understanding the temporal patterns affecting trip duration, and examining the influence of user classifications on BIXI's performance. By addressing these questions, we aim to contribute valuable insights that can inform strategic decision-making for BIXI and serve as a reference for urban planners, researchers, and policymakers committed to creating sustainable and enjoyable urban environments. 
+The central RQs explored in this report include the assessment of the
+seasonal impact on revenue, understanding the temporal patterns
+affecting trip duration, and examining the influence of user
+classifications on BIXI's performance. By addressing these questions, we
+aim to contribute valuable insights that can inform strategic
+decision-making for BIXI and serve as a reference for urban planners,
+researchers, and policymakers committed to creating sustainable and
+enjoyable urban environments.
 
-The subsequent sections of this report will delve into the methodologies employed, share the findings derived from our analysis, and offer recommendations to support BIXI in continually improving its services.
+The subsequent sections of this report will delve into the methodologies
+employed, share the findings derived from our analysis, and offer
+recommendations to support BIXI in continually improving its services.
 
 # Business/Research questions
 
@@ -133,36 +165,63 @@ The subsequent sections of this report will delve into the methodologies employe
 
 ## Imputation
 
-Linear interpolation emerged as a valuable technique to impute missing revenue data for members. This method assumes a linear relationship between observed values on either side of the missing data points. When encountering missing revenue values for members, linear interpolation estimates these values by considering the known revenues immediately preceding and following the missing positions. Utilizing the equation of a straight line, the imputation process calculates the missing revenue value based on the linear trend between the available data points. 
+Linear interpolation emerged as a valuable technique to impute missing
+revenue data for members. This method assumes a linear relationship
+between observed values on either side of the missing data points. When
+encountering missing revenue values for members, linear interpolation
+estimates these values by considering the known revenues immediately
+preceding and following the missing positions. Utilizing the equation of
+a straight line, the imputation process calculates the missing revenue
+value based on the linear trend between the available data points.
 
-The imputeTS package in R provides a convenient function, na.interpolation, with the option set to "linear," making it straightforward to implement linear interpolation for imputing missing revenue data in this specific scenario. However, it is crucial to note that linear interpolation presupposes a linear trend in the data, and its suitability depends on the underlying characteristics of the revenue time series.
+The imputeTS package in R provides a convenient function,
+na.interpolation, with the option set to "linear," making it
+straightforward to implement linear interpolation for imputing missing
+revenue data in this specific scenario. However, it is crucial to note
+that linear interpolation presupposes a linear trend in the data, and
+its suitability depends on the underlying characteristics of the revenue
+time series.
+
 ```{r}
 
 df_main$rev_imputed <- ifelse(df_main$mem == 1, na_interpolation(df_main$rev, option = "linear"), df_main$rev)
 
 ```
 
-
 # Research Question 1: How do seasonal factors impact trip revenue for BIXI Montréal?
-ADD INTERACTION TERM
-**Objective of Analysis:** This regression model is examining the impact
-of the month (`mm`), average daily temperature (`temp`), and total
-amount of rainfall (`rain`) and membershipt (`mem`) on the revenue
-(`rev_pred`) generated by trips leaving from a specified station.
+
+ADD INTERACTION TERM **Objective of Analysis:** This regression model is
+examining the impact of the month (`mm`), average daily temperature
+(`temp`), and total amount of rainfall (`rain`) and membershipt (`mem`)
+on the revenue (`rev_pred`) generated by trips leaving from a specified
+station.
 
 ## Model Linear regression
 
 ```{r Seasonal_effect_revenue, echo=FALSE}
-seasonal_effect_rev_model <- lm(rev_pred ~ mm + temp + rain + mem, data = df_main)
+seasonal_effect_rev_model <- lm(rev_imputed ~ mm + temp + rain + mem, data = df_main)
 summary(seasonal_effect_rev_model)
 ```
-## Model Linear Mixed model
-```{r}
 
+## Model Linear Mixed model (ATUL)
+
+Comment: compound symmetric correlation structure is not ideal for time
+series if I am not mistaken
+
+```{r}
 seasonal_effect_rev_gls <- gls(rev_imputed ~ temp + rain + mm, correlation = corCompSymm(form = ~ 1 | station), data = df_main)
 
 # Display model summary
 summary(seasonal_effect_rev_gls)
+```
+
+```{r}
+# CHIKE: Note that using compound symmetric gives the same covariance to each observation
+cov.matrix = getVarCov(seasonal_effect_rev_gls,individual = 1)
+cov2cor(cov.matrix)
+```
+
+```{r}
 coefficients_and_pvalues <- coef(summary(seasonal_effect_rev_gls))
 print(coefficients_and_pvalues)
 
@@ -172,54 +231,103 @@ residuals_gls <- residuals(seasonal_effect_rev_gls)
 # Create a Normal Q-Q plot
 qqnorm(residuals_gls, main = "Normal Q-Q Plot of Residuals")
 qqline(residuals_gls)
-
-
-
 ```
+
 ##Strength of the model
 
-The Normal Q-Q plot provides valuable insights into the distribution of residuals in the BIXI data model. The near-perfect alignment of residuals with the reference line from -4 to +2 suggests that a substantial portion of the residuals adheres to a normal distribution. However, the major upward deviation observed from +2 to +4 indicates the presence of extreme positive residuals that do not align with the expected normal distribution. This discrepancy highlights a limitation in the model, signaling the existence of outliers or influential observations that could significantly impact the model's accuracy. These outliers may be indicative of unaccounted-for factors or unexpected events that contribute to revenue variations beyond the model's current specifications. Addressing this limitation may involve further exploration of the data to identify the sources of these extreme residuals, potential model refinements, or the consideration of alternative modeling approaches to better capture the underlying patterns in the BIXI revenue data.
+The Normal Q-Q plot provides valuable insights into the distribution of
+residuals in the BIXI data model. The near-perfect alignment of
+residuals with the reference line from -4 to +2 suggests that a
+substantial portion of the residuals adheres to a normal distribution.
+However, the major upward deviation observed from +2 to +4 indicates the
+presence of extreme positive residuals that do not align with the
+expected normal distribution. This discrepancy highlights a limitation
+in the model, signaling the existence of outliers or influential
+observations that could significantly impact the model's accuracy. These
+outliers may be indicative of unaccounted-for factors or unexpected
+events that contribute to revenue variations beyond the model's current
+specifications. Addressing this limitation may involve further
+exploration of the data to identify the sources of these extreme
+residuals, potential model refinements, or the consideration of
+alternative modeling approaches to better capture the underlying
+patterns in the BIXI revenue data.
 
 ## Interpretation
 
-**Intercept (14.27)**: The expected revenue in April is, on average, 14.27 $ when temperature (temp) is zero, there is not rain). It is difficult to interpret at practically, temperature would not be zero in April.
+**Intercept (14.27)**: The expected revenue in April is, on average,
+14.27 \$ when temperature (temp) is zero, there is not rain). It is
+difficult to interpret at practically, temperature would not be zero in
+April.
 
-**Temperature (0.15)**: A one-unit increase in temperature is associated with a 0.15 $ increase, on average, in revenue, keeping other variables constant. Higher temperatures are positively correlated with increased revenue.
+**Temperature (0.15)**: A one-unit increase in temperature is associated
+with a 0.15 \$ increase, on average, in revenue, keeping other variables
+constant. Higher temperatures are positively correlated with increased
+revenue.
 
-**Rainfall (-0.22)**: Rainfall leads a 0.22 unit decrease in revenue keeping other variables constant. Higher rainfall is negatively correlated with revenue, suggesting potential negative effects on Bixi usage. 
+**Rainfall (-0.22)**: Rainfall leads a 0.22 unit decrease in revenue
+keeping other variables constant. Higher rainfall is negatively
+correlated with revenue, suggesting potential negative effects on Bixi
+usage.
 
-**May (mm5 - 2.44)**: Revenue is expected to increase by 2.44 $, on average, in May compared to April (reference month) keeping other variables constant. May is associated with higher revenue compared to April. 
+**May (mm5 - 2.44)**: Revenue is expected to increase by 2.44 \$, on
+average, in May compared to April (reference month) keeping other
+variables constant. May is associated with higher revenue compared to
+April.
 
-**June (mm6 - 6.99)**: Revenue is expected to increase by 6.99 $, on average, in June compared to April keeping other variables constant. June has a significant positive impact on revenue. 
+**June (mm6 - 6.99)**: Revenue is expected to increase by 6.99 \$, on
+average, in June compared to April keeping other variables constant.
+June has a significant positive impact on revenue.
 
-**July (mm7 - 13.73)**: Revenue is expected to increase by 13.73 $, on average, in July compared to April keeping other variables constant. Interpretation: July has the most significant positive impact on revenue among the months. 
+**July (mm7 - 13.73)**: Revenue is expected to increase by 13.73 \$, on
+average, in July compared to April keeping other variables constant.
+Interpretation: July has the most significant positive impact on revenue
+among the months.
 
-**August (mm8 - 14.69)**: Revenue is expected to increase by 14.69 $, on average, in August compared to April keeping other variables constant. Interpretation: August has a substantial positive impact on revenue. 
+**August (mm8 - 14.69)**: Revenue is expected to increase by 14.69 \$,
+on average, in August compared to April keeping other variables
+constant. Interpretation: August has a substantial positive impact on
+revenue.
 
-**September (mm9 - 15.82)**: Revenue is expected to increase by 15.82 $, on average, in September compared to April keeping other variables constant. September has substantial positive impact on revenue. 
+**September (mm9 - 15.82)**: Revenue is expected to increase by 15.82
+\$, on average, in September compared to April keeping other variables
+constant. September has substantial positive impact on revenue.
 
-**October (mm10 - 9.19)**: Revenue is expected to increase by 9.19 $, on average, in October compared to April keeping other variables constant. Interpretation: October has a positive impact on revenue. 
+**October (mm10 - 9.19)**: Revenue is expected to increase by 9.19 \$,
+on average, in October compared to April keeping other variables
+constant. Interpretation: October has a positive impact on revenue.
 
-**November (mm11 - 3.29)**: Revenue is expected to increase by 3.29 $, on average, in November compared to April keeping other variables constant. November has a modest positive impact on revenue. 
+**November (mm11 - 3.29)**: Revenue is expected to increase by 3.29 \$,
+on average, in November compared to April keeping other variables
+constant. November has a modest positive impact on revenue.
 
-##Business Implications: 
+##Business Implications:
 
-**Temperature**: Bixi can capitalize on warmer temperatures by promoting increased ridership during favorable weather conditions. 
+**Temperature**: Bixi can capitalize on warmer temperatures by promoting
+increased ridership during favorable weather conditions.
 
-**Rainfall**: Strategies to mitigate the negative impact of rainfall on revenue may include targeted marketing during rainy periods or offering promotions to incentivize usage. 
+**Rainfall**: Strategies to mitigate the negative impact of rainfall on
+revenue may include targeted marketing during rainy periods or offering
+promotions to incentivize usage.
 
-**Seasonal Variation**: Understanding the seasonal variation allows Bixi to allocate resources effectively, focusing on peak months like July, August, and September for marketing and service enhancements. 
+**Seasonal Variation**: Understanding the seasonal variation allows Bixi
+to allocate resources effectively, focusing on peak months like July,
+August, and September for marketing and service enhancements.
 
-**Month-specific Strategies**: Tailoring marketing campaigns or promotional offers based on the impact of each month on revenue can optimize Bixi's overall financial performance. 
+**Month-specific Strategies**: Tailoring marketing campaigns or
+promotional offers based on the impact of each month on revenue can
+optimize Bixi's overall financial performance.
 
-**Planning and Resource Allocation**: Knowledge of specific months with higher revenue can guide resource allocation, such as increasing bike availability and marketing efforts during peak months. 
+**Planning and Resource Allocation**: Knowledge of specific months with
+higher revenue can guide resource allocation, such as increasing bike
+availability and marketing efforts during peak months.
 
-**Operational Adjustments**: Bixi can make operational adjustments, such as increasing staff or bikes, during months with the most significant positive impact on revenue.
-
+**Operational Adjustments**: Bixi can make operational adjustments, such
+as increasing staff or bikes, during months with the most significant
+positive impact on revenue.
 
 ## Verification of Assumptions
-NEED A MORE COMPLETE ASSUPTION VALIDATION
-### Normality of residuals
+
+NEED A MORE COMPLETE ASSUPTION VALIDATION \### Normality of residuals
 
 ```{r echo=FALSE}
 par(mfrow=c(1,2), pin=c(2,2))  # 1 row, 2 columns
@@ -247,6 +355,30 @@ with higher residuals (perhaps outliers or instances where the model
 systematically underpredicts). The deviation from normality might not be
 a problem because the sample is large enough.
 
+## Research Question 1: Autoregressive Structure (CHIKE)
+
+```{r}
+seasonal_effect_rev_gls <- gls(rev_imputed ~ temp + rain + mm, correlation = corAR1(form = ~ 1 | station), data = df_main)
+
+# Display model summary
+summary(seasonal_effect_rev_gls)
+```
+
+As expected with an auto-regressive correlation structure, the further
+back the time period, the lower the correlation.
+
+```{r}
+getVarCov(seasonal_effect_rev_gls,individual = 1)
+```
+
+```{r}
+#df_main
+seasonal_effect_rev_gls <- lme(rev_imputed ~ temp + rain + mm, random = - 1 | df_main$station, data = df_main)
+
+# Display model summary
+summary(seasonal_effect_rev_gls)
+```
+
 # Research Question 2: How do daily and weekly patterns impact trip durations for BIXI Montréal?
 
 **Objective of Analysis:** This regression model is examining the impact
@@ -255,7 +387,9 @@ of the day of the month (`dd`), day of the week (`wday`), and holidays
 specified station.
 
 ## Model
+
 DONT USE DD AS CONTINUOUS
+
 ```{r Time_pattern_trip_duration, echo=FALSE}
 time_pattern_dur_model <- lm(dur ~ dd + wday + holiday, data=df_main)
 summary(time_pattern_dur_model)
@@ -291,8 +425,7 @@ statistically significant either (p-value = 0.1428). - Rentals on
 **Tuesdays** are **34.48 minutes shorter** on average, and this is
 statistically significant (\*\* p-value = 0.0030). - Rentals on
 **Wednesdays** are **20.57 minutes shorter** on average. This result is
-at the borderline of significance (p-value = 0.0745).
-DO A GLOBAL F TEST
+at the borderline of significance (p-value = 0.0745). DO A GLOBAL F TEST
 **Holiday (`holiday1`)**: - On holidays, bike rentals are, on average,
 **1 hour and 8 minutes longer** compared to non-holidays. This is
 statistically significant (\*\* p-value = 0.0012), suggesting that
@@ -307,8 +440,8 @@ the higher trip duration during holidays, adequate steps should be taken
 to ensure Bixi availability at stations.
 
 ## Verification of assumptions
-NOT COMPLETE
-### Normality of residuals
+
+NOT COMPLETE \### Normality of residuals
 
 ```{r echo=FALSE}
 par(mfrow=c(1,2), pin=c(2,2))  # 1 row, 2 columns
@@ -359,10 +492,10 @@ increase in trip length may discourage users from using bixi's system
 and result in a decrease in trip number.
 
 ## Variables Selection
-REMOVE PART OF MONTH
-Our goal is to incorporate most of the important variables in order to
-increase our chance of respecting the assumption of E(e)=0 and thus
-making our model more telling.
+
+REMOVE PART OF MONTH Our goal is to incorporate most of the important
+variables in order to increase our chance of respecting the assumption
+of E(e)=0 and thus making our model more telling.
 
 Variables that make business sense to include:
 
@@ -413,8 +546,8 @@ cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
 We see very low correlation between the Xs which means we should not get
 any problems with collinearity between our numerical variables.
 
-After the assumptions verification we chose to exclude `n_tot` :
-VERIFY
+After the assumptions verification we chose to exclude `n_tot` : VERIFY
+
 ```{r , echo=FALSE, fig.width=4, fig.height=3}
 plot(df_main$n_tot, df_main$avg)  
 ```
@@ -426,7 +559,9 @@ since as the number of trip increases, the average trip duration should
 converge towards the true mean.
 
 ## Model
+
 INTERACTIO AND QUADRANT
+
 ```{r , echo=FALSE}
 model_AvgDur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + percent_AM + PartOfMonth + Metro_ind, data = df_main)
 summary(model_AvgDur)
@@ -441,7 +576,7 @@ associated with the F-statistic is very low, hence our model is globally
 significant.
 
 **Intercept** : The interpretation of the intercept does not make sense
-in this case 
+in this case
 
 **Season**: The reference level is fall. We can see that on average trip
 duration during spring and summer are respectively 2.7 and 0.5 minutes
@@ -465,9 +600,8 @@ average trip duration and the moment of the week is different depending
 on the membership status. We observe that non-member have longer trips
 on average and that weekend trips tends to increase average trip length.
 
-The 4 different levels in order of trip length are as follows:
-EXPLAIN IN WORDS
-1.  Lowest level : Weekday and member (-1.84 minutes)
+The 4 different levels in order of trip length are as follows: EXPLAIN
+IN WORDS 1. Lowest level : Weekday and member (-1.84 minutes)
 
 2.  Second lowest : Weekend and member (2.5-1.8-1.5 = -0.8 minutes)
 
@@ -602,7 +736,6 @@ grid.arrange(p1, p2, p4, p5, p6, p7, p8, p9, p10, p11, ncol=3)
 
 No major problem of heteroscedasticity were detected. The variable
 `n_tot` has been removed as stated earlier.
-
 
 # Limitations and shortcomings
 
