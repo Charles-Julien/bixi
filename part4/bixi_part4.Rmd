@@ -29,6 +29,7 @@ library(stats)
 library(car)
 library(janitor)
 library(tibble)
+library(lmtest)
 ```
 
 # Instruction
@@ -102,7 +103,7 @@ df_main <- df_main %>% mutate(
         
               year = 2021 ,
               
-              date = as.Date(paste(year,mm,dd,sep="/")),
+              date_ = as.Date(paste(year,mm,dd,sep="/")),
               
               week_num = as.numeric(strftime(date, format = "%V")),
  
@@ -357,26 +358,127 @@ a problem because the sample is large enough.
 
 ## Research Question 1: Autoregressive Structure (CHIKE)
 
+Linear Mixed Models (LMMs) - Model Comparisons (joshuawiley.com)
+
 ```{r}
-seasonal_effect_rev_gls <- gls(rev_imputed ~ temp + rain + mm, correlation = corAR1(form = ~ 1 | station), data = df_main)
+#library(ggplot2)
+# tous / all id
+#ggplot(data = df_main, aes(x = week_num, y = rev_imputed, group = station)) +
+#geom_line(alpha = 0.2) + scale_x_continuous(expand = c(0,
+#0), limits = c(1, 5))
+
+```
+
+```{r}
+seasonal_effect_rev.ar <- gls(rev_imputed ~ temp + rain + mm, correlation = corAR1(form = ~ 1 | station), data = df_main)
 
 # Display model summary
-summary(seasonal_effect_rev_gls)
+summary(seasonal_effect_rev.ar)
 ```
 
 As expected with an auto-regressive correlation structure, the further
 back the time period, the lower the correlation.
 
 ```{r}
-getVarCov(seasonal_effect_rev_gls,individual = 1)
+getVarCov(seasonal_effect_rev.ar,individual = 1)
 ```
+
+## Research Question 1: Random Intercept (CHIKE)
 
 ```{r}
 #df_main
-seasonal_effect_rev_gls <- lme(rev_imputed ~ temp + rain + mm, random = - 1 | df_main$station, data = df_main)
+seasonal_effect_rev.rand_int <- lme(rev_imputed ~ temp + rain + mm, random = ~ 1 | station, data = df_main)
 
 # Display model summary
-summary(seasonal_effect_rev_gls)
+summary(seasonal_effect_rev.rand_int)
+```
+
+```{r}
+# Expected to be True comparing fixed effects coefficients between base model and random effects model
+isTRUE(all.equal(coef(seasonal_effect_rev_model), fixef(seasonal_effect_rev.rand_int)))
+```
+
+```{r}
+getVarCov(seasonal_effect_rev.rand_int, type = "random.effects")
+```
+
+```{r}
+getVarCov(seasonal_effect_rev.rand_int, individual = 1, type = "conditional")
+```
+
+```{r}
+seasonal_effect_rev.ar_rand_int <- lme(rev_imputed ~ temp + rain + mm, random = ~1 |
+station, correlation = corAR1(form = ~1 | station), data = df_main)
+summary(seasonal_effect_rev.ar_rand_int)
+
+```
+
+```{r}
+getVarCov(seasonal_effect_rev.ar_rand_int, type = "random.effects")
+```
+
+```{r}
+AIC(seasonal_effect_rev.ar_rand_int, seasonal_effect_rev.ar)
+```
+
+## Research Question 1: Random Slope (CHIKE)
+
+```{r}
+#Doesnt make sense in this context to use random effects on the coefficient for temperature because temperature across montreal should be highly similar
+#Using rain random effect does not work
+seasonal_effect_rev.rand_coef <- lme(rev_imputed ~ temp + rain + mm, random = ~1 + temp |
+station, data = df_main)
+summary(seasonal_effect_rev.rand_coef)
+```
+
+```{r}
+getVarCov(seasonal_effect_rev.rand_coef, type = "random.effects")
+```
+
+Looked at log likelihood to see if seasonal effect was necessary.
+
+```{r}
+D <- -2 * (seasonal_effect_rev.ar_rand_int$logLik - seasonal_effect_rev.ar$logLik)
+D
+```
+
+```{r}
+pchisq(D, df = 13, lower.tail = FALSE)/2
+```
+
+Using information criterion and likelihood ratio tests, we compared the
+4 linear mixed models together.
+
+```{r}
+anova(seasonal_effect_rev.ar, seasonal_effect_rev.ar_rand_int,seasonal_effect_rev.rand_coef,seasonal_effect_rev_gls)
+#anova(seasonal_effect_rev_model,seasonal_effect_rev.ar)
+```
+
+```{r}
+lrtest(seasonal_effect_rev.ar,seasonal_effect_rev.rand_coef)
+```
+
+```{r}
+lrtest(seasonal_effect_rev_gls,seasonal_effect_rev.rand_coef)
+```
+
+```{r}
+lrtest(seasonal_effect_rev_gls,seasonal_effect_rev.ar_rand_int)
+```
+
+```{r}
+AIC(seasonal_effect_rev.ar)
+```
+
+```{r}
+nobs(seasonal_effect_rev_model)
+nobs(seasonal_effect_rev.ar_rand_int)
+```
+
+```{r}
+#widyr::pairwise_cor(df_main, station, rain, c)
+#df_main %>% select(station:rain) %>% modelsummary::datasummary_correlation()
+
 ```
 
 # Research Question 2: How do daily and weekly patterns impact trip durations for BIXI Montréal?
@@ -480,6 +582,20 @@ if the sample size is large enough.
     significant relationships even when they are practically
     insignificant. So, while p-values might be small, the effect sizes
     or coefficients might not be practically meaningful.
+
+```{r}
+time_pattern_dur.ar <- gls(dur ~ dd + wday + holiday, correlation = corAR1(form = ~ 1 | station), data = df_main)
+
+# Display model summary
+summary(time_pattern_dur.ar)
+```
+
+```{r}
+# holiday not working as random coefficient
+time_pattern_dur.rand_coef <- lme(dur ~ dd + wday + holiday, random = ~1 + dd |
+station, data = df_main)
+summary(time_pattern_dur.rand_coef)
+```
 
 # Research Question 3: What variables impact the average bixi trip duration?
 
