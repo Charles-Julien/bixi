@@ -30,6 +30,11 @@ library(car)
 library(janitor)
 library(tibble)
 library(lmtest)
+library(lme4)
+install.packages("sf")
+library(sf)
+install.packages("lmerTest")
+library(lmerTest)
 ```
 
 # Instruction
@@ -46,20 +51,60 @@ shortcomings or limitations of the analyses carried out.
 
 # Set working directory to file location
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-df_raw = read.csv("./../src/bixi10.csv")
-df_station = read.csv("./../src/2021_stations.csv")
+
+# Set working directory to file location
+df_raw = read.csv("bixi10.csv")
+df_station = read.csv("2021_stations.csv")
+
+bixi_stations_sf <- st_as_sf(df_station, coords = c("longitude", "latitude"), crs = 4326)
+
+districts <- st_read("data_district.geojson")
+
+crs_bixi_stations <- st_crs(bixi_stations_sf)
+crs_districts <- st_crs(districts)
+
+# Print CRS for inspection
+print(crs_bixi_stations)
+print(crs_districts)
+
+# If the CRS do not match, transform one of them
+# For example, if you want to transform the CRS of bixi_stations_sf to match districts:
+if (crs_bixi_stations != crs_districts) {
+  bixi_stations_sf <- st_transform(bixi_stations_sf, crs_districts)
+}
+
+# After ensuring both dataframes have the same CRS, perform the spatial join
+stations_with_district <- st_join(bixi_stations_sf, districts)
+
+# Perform a spatial join
+# Add the district name as a new column
+df_station$district <- stations_with_district$NOM
+
+
+
+ids_to_update <- c('527', '528', '529', '530', '531', '703', '704', '705', '706', '856', '862', '944', '945', '1060', '1065', '1085', '1086', '1126', '1136') 
+districts_to_assign <- c('Longueuil', 'Longueuil', 'Longueuil', 'Longueuil', 'Longueuil', 'Laval', 'Laval', 'Laval', 'Laval', 'Ville-Marie', 'Longueuil', 'Laval', 'Laval', 'Laval', 'Laval', 'Laval', 'Laval', 'Laval', 'Laval') 
+
+for (i in seq_along(ids_to_update)) {
+  row_index <- which(df_station$pk == ids_to_update[i])
+  df_station$district[row_index] <- districts_to_assign[i]
+}
+
+df_station$district = as.factor(df_station$district)
 df_main = left_join(df_raw,df_station,by = c("station"="pk"))
-head(df_main)
 
 ```
+
 
 ```{r echo=FALSE}
 # Data preparation and feature engineering
 
 
 # Note: Correlation between rev and dur is very high 0.994467
+df_main$rev[is.na(df_main$rev)] <- df_main$n_tot[is.na(df_main$rev)] * 1.25 + df_main$dur[is.na(df_main$rev)] * 15
 
-df_main <- df_main %>% mutate(
+
+df_main <- df_main %>% dplyr::mutate(
               holiday = factor(holiday),
               mem = factor(mem),
               mm = factor(mm),
@@ -100,17 +145,9 @@ df_main <- df_main %>% mutate(
                 
               long_wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
                         ,ifelse((wday %in% c("Friday","Monday") & holiday=='1'),'Long Weekend','Weekday'))),
-        
-              year = 2021 ,
-              
-              date_ = as.Date(paste(year,mm,dd,sep="/")),
-              
-              week_num = as.numeric(strftime(date, format = "%V")),
- 
-              hot_weather_ind = factor(ifelse(temp > 15, 'Hot', 'Cold')),# create a new variable indicating whether the average daily trip duration exceeds 15 minutes, and explore models for this new variable.
 
-              avg_15_ind = factor(ifelse(avg>15,1,0)))
- 
+            )
+
 ```
 
 # Introduction
@@ -162,45 +199,21 @@ recommendations to support BIXI in continually improving its services.
 -   Research Question 3: What variables impact the average bixi trip
     duration?
 
-# Pre-processing
 
-## Imputation
 
-Linear interpolation emerged as a valuable technique to impute missing
-revenue data for members. This method assumes a linear relationship
-between observed values on either side of the missing data points. When
-encountering missing revenue values for members, linear interpolation
-estimates these values by considering the known revenues immediately
-preceding and following the missing positions. Utilizing the equation of
-a straight line, the imputation process calculates the missing revenue
-value based on the linear trend between the available data points.
-
-The imputeTS package in R provides a convenient function,
-na.interpolation, with the option set to "linear," making it
-straightforward to implement linear interpolation for imputing missing
-revenue data in this specific scenario. However, it is crucial to note
-that linear interpolation presupposes a linear trend in the data, and
-its suitability depends on the underlying characteristics of the revenue
-time series.
-
-```{r}
-
-df_main$rev_imputed <- ifelse(df_main$mem == 1, na_interpolation(df_main$rev, option = "linear"), df_main$rev)
-
-```
 
 # Research Question 1: How do seasonal factors impact trip revenue for BIXI Montréal?
 
 ADD INTERACTION TERM **Objective of Analysis:** This regression model is
 examining the impact of the month (`mm`), average daily temperature
 (`temp`), and total amount of rainfall (`rain`) and membershipt (`mem`)
-on the revenue (`rev_pred`) generated by trips leaving from a specified
+on the revenue (`rev`) generated by trips leaving from a specified
 station.
 
 ## Model Linear regression
 
 ```{r Seasonal_effect_revenue, echo=FALSE}
-seasonal_effect_rev_model <- lm(rev_imputed ~ mm + temp + rain + mem, data = df_main)
+seasonal_effect_rev_model <- lm(rev ~ mm + temp + rain + mem, data = df_main)
 summary(seasonal_effect_rev_model)
 ```
 
@@ -210,7 +223,7 @@ Comment: compound symmetric correlation structure is not ideal for time
 series if I am not mistaken
 
 ```{r}
-seasonal_effect_rev_gls <- gls(rev_imputed ~ temp + rain + mm, correlation = corCompSymm(form = ~ 1 | station), data = df_main)
+seasonal_effect_rev_gls <- gls(rev ~ temp + rain + mm, correlation = corCompSymm(form = ~ 1 | station), data = df_main)
 
 # Display model summary
 summary(seasonal_effect_rev_gls)
@@ -370,7 +383,7 @@ Linear Mixed Models (LMMs) - Model Comparisons (joshuawiley.com)
 ```
 
 ```{r}
-seasonal_effect_rev.ar <- gls(rev_imputed ~ temp + rain + mm, correlation = corAR1(form = ~ 1 | station), data = df_main)
+seasonal_effect_rev.ar <- gls(rev ~ temp + rain + mm, correlation = corAR1(form = ~ 1 | station), data = df_main)
 
 # Display model summary
 summary(seasonal_effect_rev.ar)
@@ -387,7 +400,7 @@ getVarCov(seasonal_effect_rev.ar,individual = 1)
 
 ```{r}
 #df_main
-seasonal_effect_rev.rand_int <- lme(rev_imputed ~ temp + rain + mm, random = ~ 1 | station, data = df_main)
+seasonal_effect_rev.rand_int <- lme(rev ~ temp + rain + mm, random = ~ 1 | station, data = df_main)
 
 # Display model summary
 summary(seasonal_effect_rev.rand_int)
@@ -426,7 +439,7 @@ AIC(seasonal_effect_rev.ar_rand_int, seasonal_effect_rev.ar)
 ```{r}
 #Doesnt make sense in this context to use random effects on the coefficient for temperature because temperature across montreal should be highly similar
 #Using rain random effect does not work
-seasonal_effect_rev.rand_coef <- lme(rev_imputed ~ temp + rain + mm, random = ~1 + temp |
+seasonal_effect_rev.rand_coef <- lme(rev ~ temp + rain + mm, random = ~1 + temp |
 station, data = df_main)
 summary(seasonal_effect_rev.rand_coef)
 ```
@@ -481,107 +494,122 @@ nobs(seasonal_effect_rev.ar_rand_int)
 
 ```
 
+```
 # Research Question 2: How do daily and weekly patterns impact trip durations for BIXI Montréal?
 
-**Objective of Analysis:** This regression model is examining the impact
-of the day of the month (`dd`), day of the week (`wday`), and holidays
-(`holiday`) on the revenue (`rev`) generated by trips leaving from a
+**Objective of Analysis:** This regression model is examining the impact of the day of the month (`dd`), day of the week (`wday`), and holidays (`holiday`) on the revenue (`rev`) generated by trips leaving from a
 specified station.
 
 ## Model
 
-DONT USE DD AS CONTINUOUS
-
 ```{r Time_pattern_trip_duration, echo=FALSE}
-time_pattern_dur_model <- lm(dur ~ dd + wday + holiday, data=df_main)
-summary(time_pattern_dur_model)
-```
-
-## Interpretation
-
-**Overall Model** : The model explains about 0,5% of the variability in
-total rental durations. The F-statistic and its associated p-value
-confirm that the model is statistically significant and that at least
-some of the predictors have significant effects.
-
-**Intercept (284.98)***: - On an average day (specifically, a
-non-holiday), the expected rental duration is approximately 4h45. - This
-value is statistically significant (*\*\* p-value \< 2e-16), which
-indicates strong evidence against the null hypothesis.
-
-**Day of the Month (`dd`)**: - For each additional day in the month, the
-rental duration increases by an average of 0.04 minutes. - This effect
-is not statistically significant (p-value = 0.9144), suggesting the day
-of the month might not be a meaningful predictor for the duration of
-BIXI bike rentals.
-
-**Day of the Week (`wday`)**: - Compared to Fridays: - Rentals on
-**Mondays** are, on average, **49 minutes shorter**. This is
-statistically significant (\*\*\* p-value = 2.55e-05). - Rentals on
-**Saturdays** are about **15.05 minutes longer** on average, but this is
-not statistically significant (p-value = 0.1868). - Rentals on
-**Sundays** are about **6.51 minutes shorter** on average, but this is
-also not statistically significant (p-value = 0.5711). - Rentals on
-**Thursdays** are **16.95 minutes shorter** on average, but this isn't
-statistically significant either (p-value = 0.1428). - Rentals on
-**Tuesdays** are **34.48 minutes shorter** on average, and this is
-statistically significant (\*\* p-value = 0.0030). - Rentals on
-**Wednesdays** are **20.57 minutes shorter** on average. This result is
-at the borderline of significance (p-value = 0.0745). DO A GLOBAL F TEST
-**Holiday (`holiday1`)**: - On holidays, bike rentals are, on average,
-**1 hour and 8 minutes longer** compared to non-holidays. This is
-statistically significant (\*\* p-value = 0.0012), suggesting that
-holidays have a meaningful impact on the duration of bike rentals.
-
-**Business Implications**: BIXI bike rentals tend to be shorter on
-Mondays and Tuesdays compared to Fridays, and rentals on holidays are
-significantly longer than on non-holidays. Planning for resource
-allocation, marketing strategies, or promotional campaigns should
-consider these patterns to optimize business operations. Keeping in mind
-the higher trip duration during holidays, adequate steps should be taken
-to ensure Bixi availability at stations.
-
-## Verification of assumptions
-
-NOT COMPLETE \### Normality of residuals
-
-```{r echo=FALSE}
-par(mfrow=c(1,2), pin=c(2,2))  # 1 row, 2 columns
-
-time_pattern_dur_residual_qqplot = qqnorm(time_pattern_dur_model$residuals)
-qqline(time_pattern_dur_model$residuals)
-time_pattern_dur_residual_hist = hist(time_pattern_dur_model$residuals, main="Histogram of Residuals", xlab="Residuals")
+time_pattern_dur_model_mixed <- lmer(dur ~ holiday + wknd_ind + wknd_ind*mem + (1|district/station), data=df_main)
+summary(time_pattern_dur_model_mixed)
 
 ```
+The model explores the relationship between trip duration (`dur`) and factors like holidays (`holiday`), weekend indicator (`wknd_ind`), membership status (`mem`) and its interaction with weekend indicator, considering the nested structure of stations within districts.
 
-**Normal Q-Q Plot**: From the given Q-Q plot, the points deviate
-significantly from the diagonal line, especially in the tails. This
-suggests that the residuals are not normally distributed. The heavy
-tails (points deviating from the line at both ends) suggest the presence
-of potential outliers or extreme values in the residuals.
+**Random Effects**
+- **Station:District Variability**: The significant variance in the random intercepts for stations within districts (Variance = 23,795, Std. Dev. = 154.3) suggests considerable differences in baseline trip durations across stations, depending on their district.
+- **District-Level Variability**: There is also notable variability between districts (Variance = 12,617, Std. Dev. = 112.3), indicating that the district a station belongs to influences trip duration.
+- These results highlight the importance of accounting for the hierarchical structure of the data (stations nested within districts).
 
-**Histogram of Residuals**: The histogram shows that the majority of
-residuals are clustered around zero, but there are some extreme positive
-values. This is consistent with the observation from the Q-Q plot and
-indicates a possible right-skewed distribution of residuals. In the
-context of regression, the CLT means that even if the residuals aren't
-perfectly normally distributed in the population, the sampling
-distribution of the regression coefficients will be approximately normal
-if the sample size is large enough.
+**Fixed Effects (Significance & Interpretation)**
+- **Intercept**: The negative intercept (-34.453) may not be meaningful by itself, as it represents the expected trip duration when all other variables are at their reference levels. In this context, an intercept of -34.453 would mean that when it's a non-holiday weekday, and the rider is not a member, the model predicts a trip duration of -34.453 units. Since negative trip duration is not possible, this result might initially seem nonsensical.
+- **Holiday (significant)**: On average, holding other variables constant, total trip durations on holidays are 51.945 minutes longer compared to non-holidays. This reflects a tendency for longer trips during holidays. This effect is statistically significant (p < 0.001).
+- **Weekend Indicator (significant)**: On average, with other factors held constant, total trip durations on weekends are 67.896 minutes longer than on weekdays. This indicates a preference or tendency for longer trips during weekends. This is highly significant (p < 0.001).
+- **Membership Status (significant)**: Holding other variables at their reference levels, on average, members have a total trip durations that are 313.065 minutes longer compared to non-members. This might indicate different usage patterns, such as members taking longer trips., a highly significant effect (p < 0.001).
+- **Interaction: Weekend and Membership (significant)**: On average, and with other variables held constant, the interaction effect suggests that the increased total trip duration associated with membership is reduced by 68.763 minutes on weekends. This indicates that the distinction in trip duration between members and non-members is less pronounced on weekends. This is also statistically significant (p < 0.001).
 
-**Implications**:
+**Correlations of Fixed Effects**
+- The correlation matrix shows the relationships between the different fixed effects in the model. High correlations can indicate potential multicollinearity issues, which might affect the interpretation of coefficients. However, in the model, these correlations seem relatively moderate.
 
--   While large sample sizes can make the assumption of normality less
-    crucial, it doesn't mean analysts should ignore violations of other
-    assumptions or entirely disregard the distribution of residuals.
-    Diagnostics and plots (like Q-Q plots) still provide valuable
-    information about potential model misspecifications or the presence
-    of influential outliers.
+**Overall Interpretation**
+- The model indicates that both the day of the week (weekend vs. weekday) and membership status significantly impact trip durations, with an interesting interaction effect on weekends for members.
+- The significant random effects imply that both the specific station and the district it's in are important factors influencing trip durations.
+- The model appears to be a good fit for the data, capturing key variability both within and between groups (stations and districts).
 
--   Moreover, a large sample size can sometimes detect statistically
-    significant relationships even when they are practically
-    insignificant. So, while p-values might be small, the effect sizes
-    or coefficients might not be practically meaningful.
+
+```{r}
+null_model <- lmer(dur ~ 1 + (1 | district/station), data = df_main)
+
+# Compare full model to null model
+anova(time_pattern_dur_model_mixed, null_model)
+
+```
+- The significant Chi-square test (p < 0.001) suggests that the fixed effects included in the full model (related to holidays, weekends, and membership status) contribute meaningfully to explaining the variability in trip durations.
+- The lower AIC and BIC values for the full model compared to the null model further support that the full model provides a better fit to the data.
+- This analysis strongly indicates that the factors of holidays, weekends, and membership status, along with their interactions, are important predictors of trip duration in the context of the bike-sharing data.
+
+## Assumptions
+
+```{r}
+# Using lmer model
+residuals <- residuals(time_pattern_dur_model_mixed)
+
+# Histogram
+hist(residuals, breaks=30, main="Histogram of Residuals")
+
+# Q-Q Plot
+qqnorm(residuals)
+qqline(residuals)
+
+plot(fitted(time_pattern_dur_model_mixed), residuals, xlab="Fitted Values", ylab="Residuals")
+abline(h=0, col="red")
+
+
+# For non-time series data
+plot(residuals, type="l")
+
+# For time series data
+acf(residuals)
+
+vif(time_pattern_dur_model_mixed)  # Note: This works if 'model' is an 'lm' object; for 'lmer' objects, you might need to adapt.
+
+ranef_plot <- ranef(time_pattern_dur_model_mixed)
+plot(ranef_plot)
+
+predicted_values <- predict(time_pattern_dur_model_mixed)
+plot(df_main$dur, predicted_values)
+abline(0, 1)
+
+```
+
+**Histogram of Residuals**
+The histogram shows the distribution of residuals. It suggests that the residuals are fairly symmetrically distributed around zero, indicating that the assumption of normality might be reasonably met. However, the distribution appears slightly leptokurtic (having a peak higher than a normal distribution), suggested by the tall center of the histogram.
+
+**Normal Q-Q Plot**
+The Q-Q plot compares the quantiles of the residuals to the quantiles of a normal distribution. If the residuals were perfectly normally distributed, the points would lie on the 45-degree reference line. In the Q-Q plot, the points deviate from the line at the ends, indicating potential heavy tails in the distribution of residuals. This could suggest some departure from normality, particularly with potential outliers or extreme values.
+
+**Residuals vs Fitted Values Plot**
+The residuals should be randomly scattered around the horizontal line at zero, with no clear pattern. In the plot, there seems to be a slight "funnel" shape, where the variance of the residuals increases with the fitted values, which could indicate heteroscedasticity.
+
+**Residuals vs Index Plot**
+This plot displays residuals against the observation index. It's useful for detecting patterns that may indicate violation of independence. The residuals appear randomly scattered, suggesting no obvious violation of independence. However, there are some visible outliers, which should be investigated further.
+
+**ACF Plot of Residuals**
+The autocorrelation function (ACF) plot is used to check for autocorrelation in the residuals at different lags. The bars represent correlations at different lag values. If most of them are within the blue dashed lines (representing confidence intervals), it suggests little to no autocorrelation. The ACF plot shows that autocorrelation is not a concern as the correlations are within the bounds.
+
+**Q-Q Plot of Random Effects**
+This plot should show whether the random effects are normally distributed. The random effects (intercepts for `district/station` in the model) should fall along the reference line if they're normally distributed. There's some deviation from normality, but it's not extreme.
+
+**Predicted vs Actual Values Plot**
+This plot compares the predicted values from the model to the actual values. Ideally, the points should fall around the 45-degree line, indicating good model fit. The plot shows a reasonable alignment along the line, although it seems to diverge for higher values, suggesting the model might not predict as well in that range.
+
+**Interpretation Summary**
+The model assumptions are not strictly violated, but there are indications of potential issues:
+
+- The residuals are roughly normally distributed but show signs of leptokurtosis.
+- There might be some heteroscedasticity, as indicated by the Residuals vs Fitted Values plot.
+- There are outliers in the data that could be influential points worth investigating.
+- The assumption of independence seems to be met based on the Residuals vs Index and ACF plots.
+- The random effects may slightly deviate from normality, but not severely.
+
+**Limitation of the model**
+Given these observations, the following improvement could be made :
+
+- Transforming the response variable or using robust regression techniques to handle non-normality and heteroscedasticity.
+- Investigating and potentially addressing outliers.
 
 ```{r}
 time_pattern_dur.ar <- gls(dur ~ dd + wday + holiday, correlation = corAR1(form = ~ 1 | station), data = df_main)
@@ -597,6 +625,20 @@ station, data = df_main)
 summary(time_pattern_dur.rand_coef)
 ```
 
+## Business interpretation
+From a business perspective, the findings from this analysis offer valuable insights for strategic planning, marketing, operational adjustments, and potential policy development. Here are the main takeaways:
+
+**Holidays and Weekends promotion**
+The model indicates longer trip durations during holidays and weekends. This suggests higher usage or leisurely rides during these periods. There could be an opportunity to increase bike availability or introduce special promotions during holidays and weekends to cater to this demand. The interaction effect suggests that members' increased trip duration is less pronounced on weekends. This could imply that members use the service differently on weekends compared to weekdays. Design weekend-specific promotions or services for members. Understanding why this pattern occurs (leisure vs. commuting) can help tailor these offerings.
+
+**Membership pricing strategy**
+Members tend to have significantly longer trip durations compared to non-members. This highlights the importance of members to the system. There should have a focus on member retention strategies and consider special offers or loyalty programs to encourage repeat usage. Additionally, analyzing non-member behavior to tailor services and promotions effectively would be pertinent.
+
+**Geographic optimization**
+Significant variability in trip durations across different stations and districts indicates diverse usage patterns in different areas. Optimize bike and dock availability based on specific district and station demands. Targeted investments in high-usage areas could improve service efficiency.
+
+**Potential Policy Implications**
+Understanding how different areas and demographics use the bike-sharing system can inform urban planning and public transport policies. Promoting bike-sharing effectively can contribute to environmental goals by reducing reliance on motorized transportation.
 # Research Question 3: What variables impact the average bixi trip duration?
 
 **The objective** is to identify the driving factors of a bixi's trip
