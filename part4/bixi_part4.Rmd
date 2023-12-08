@@ -18,7 +18,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r message = FALSE, warning=FALSE, include = FALSE, echo=FALSE}
 # Import (The fewer the better)
 library(nlme)
-library(imputeTS)
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
@@ -29,6 +28,8 @@ library(stats)
 library(car)
 library(janitor)
 library(tibble)
+
+library(nlme)
 library(lmtest)
 library(lme4)
 #install.packages("sf")
@@ -65,10 +66,17 @@ df_station = read.csv(file.path(root,'src',"2021_stations.csv"))
 # Data loading
 
 # Set working directory to file location
+<<<<<<< HEAD
+=======
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+df_raw = read.csv("./../src/bixi10.csv")
+df_station = read.csv("./../src/2021_stations.csv")
+
+>>>>>>> 8a6497161e21b8fe20c1372600a0fbcd1c766fc6
 
 bixi_stations_sf <- st_as_sf(df_station, coords = c("longitude", "latitude"), crs = 4326)
 
-districts <- st_read("data_district.geojson")
+districts <- st_read("./../src/data_district.geojson")
 
 crs_bixi_stations <- st_crs(bixi_stations_sf)
 crs_districts <- st_crs(districts)
@@ -101,6 +109,7 @@ for (i in seq_along(ids_to_update)) {
 }
 
 df_station$district = as.factor(df_station$district)
+
 df_main = left_join(df_raw,df_station,by = c("station"="pk"))
 
 ```
@@ -127,37 +136,47 @@ df_main <- df_main %>% dplyr::mutate(
               
               rain_ind = factor(ifelse((rain != 0), 'Rain', 'NoRain')),
               
+
               # Compared to Parc Lafontaine 
-              North_South = factor(ifelse(latitude>45.5271, 'North', 'South')),
-              West_East = factor(ifelse(longitude>-73.5705, 'East', 'West')),
+              cardinality = factor(
+              ifelse(latitude > 45.5271 & longitude > -73.5705, 'North-East',
+                ifelse(latitude > 45.5271 & longitude <= -73.5705, 'North-West',
+                  ifelse(latitude <= 45.5271 & longitude > -73.5705, 'South-East',
+                         'South-West')
+                                    )
+                                  )
+                                ),
               
-              # Beginning of month versus end of month
-              PartOfMonth = factor(ifelse(dd>15, 'EOM', 'BOM')),
               
               Metro_ind = factor(ifelse(grepl("Métro", name),1,0)),
-              
-              lntot = log(n_tot),
-              
-              rev_per_min = rev/dur,
-              rev_per_trip = rev/n_tot,
-             
-              percent_AM = n_AM/n_tot,
-              percent_PM = n_PM/n_tot,
-              
-              percent_AM_PM_delta = percent_AM - percent_PM,
-              n_AM_PM_delta = n_AM - n_PM,
               
               am_pm_ind = ifelse(n_AM>=n_PM, 'AM','PM'),
               
               wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
                         ,'Weekday')),
                 
-              long_wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")), 'Weekend'
-                        ,ifelse((wday %in% c("Friday","Monday") & holiday=='1'),'Long Weekend','Weekday'))),
 
-            )
+              long_wknd_ind = factor(ifelse((wday %in% c("Sunday","Saturday")),'Weekend'
+              ,ifelse((wday %in% c("Friday","Monday") & holiday=='1'),'Long Weekend','Weekday'))),
+              
+              percent_AM = n_AM/n_tot,
+              percent_PM = n_PM/n_tot,
+        
+              year = 2021 ,
+              
+              date = as.Date(paste(year,mm,dd,sep="/")),
+              
+              week_num = as.numeric(strftime(date, format = "%V")))
+ 
+
+
+
+df_main =df_main[order(df_main$date),]
+
 
 ```
+
+
 
 # Introduction
 
@@ -393,7 +412,7 @@ Linear Mixed Models (LMMs) - Model Comparisons (joshuawiley.com)
 seasonal_effect_rev.ar <- gls(rev ~ temp + rain + mm + mem, correlation = corAR1(form = ~ 1 | station), data = df_main)
 
 # Display model summary
-summary(seasonal_effect_rev.ar)
+#summary(seasonal_effect_rev.ar)
 ```
 
 
@@ -416,7 +435,7 @@ getVarCov(seasonal_effect_rev.ar,individual = 1)
 seasonal_effect_rev.rand_int <- lme(rev ~ temp + rain + mm + mem, random = ~ 1 | station, data = df_main)
 
 # Display model summary
-summary(seasonal_effect_rev.rand_int)
+#summary(seasonal_effect_rev.rand_int)
 ```
 
 
@@ -436,7 +455,7 @@ getVarCov(seasonal_effect_rev.rand_int, individual = 1, type = "conditional")
 ```{r}
 seasonal_effect_rev.ar_rand_int <- lme(rev ~ temp + rain + mm + mem, random = ~1 |
 station, correlation = corAR1(form = ~1 | station), data = df_main)
-summary(seasonal_effect_rev.ar_rand_int)
+#summary(seasonal_effect_rev.ar_rand_int)
 
 ```
 
@@ -496,7 +515,7 @@ season_summary_combined = rbind(summary_season_rev.rand_coef[, cols], summary_se
 season_summary_combined$significance <- ifelse(season_summary_combined$`p-value`<0.05, 'Significant Feature', 'Not Significant')
 season_summary_combined
 ```
-The Model estimates are similar despite correlation structure.
+The Model estimates are similar despite different correlation structure.
 ```{r}
 ggplot(season_summary_combined, aes(fill=type, y=Value, x=Covariates)) + 
   geom_bar(colour="black",position='dodge', stat='identity')  + ggtitle ("Effect of LMMs on Coefficients") + theme_minimal () + theme(legend.position="bottom")
@@ -527,7 +546,7 @@ anova(seasonal_effect_rev.rand_coef,seasonal_effect_rev.rand_int)
 #pchisq(D, df = 13, lower.tail = FALSE)/2
 
 ```
-
+We further performed likelihood ratio tests between each of the linear mixed models and the base linear model in order to assess whether the full model fits the data significantly better than the nested model. In our analysis, the nested model consisted simply of the linear model and the full model accounted for the addition of parameters relating to the correlation structure of random effects. In each case, we concluded that the full model performed significantly better using a 1% significance threshold. This effectively means that making changes to the model structure by accounting for autocorrelation leads to a significant improvement in fit relative to a linear model.
 ```{r}
 anova(seasonal_effect_rev.rand_int,seasonal_effect_rev_model)
 anova(seasonal_effect_rev.rand_coef,seasonal_effect_rev_model)
@@ -539,16 +558,6 @@ anova(seasonal_effect_rev.ar,seasonal_effect_rev_model)
 
 ```{r}
 getVarCov(seasonal_effect_rev.rand_coef, type = "random.effects")
-```
-
-Looked at log likelihood to see if seasonal effect was necessary.
-
-```{r}
-D <- -2 * (seasonal_effect_rev.ar_rand_int$logLik - seasonal_effect_rev.ar$logLik)
-D
-```
-```{r}
-pchisq(D, df = 13, lower.tail = FALSE)/2
 ```
 
 Using information criterion and likelihood ratio tests, we compared the
@@ -591,7 +600,10 @@ nobs(seasonal_effect_rev.ar_rand_int)
 
 ```
 
+<<<<<<< HEAD
 ```         
+=======
+>>>>>>> 8a6497161e21b8fe20c1372600a0fbcd1c766fc6
 # Research Question 2: How do daily and weekly patterns impact trip durations for BIXI Montréal?
 
 **Objective of Analysis:** This regression model is examining the impact of the day of the month (`dd`), day of the week (`wday`), and holidays (`holiday`) on the revenue (`rev`) generated by trips leaving from a
@@ -845,6 +857,7 @@ and result in a decrease in trip number.
 
 ## Variables Selection
 
+
 REMOVE PART OF MONTH Our goal is to incorporate most of the important
 variables in order to increase our chance of respecting the assumption
 of E(e)=0 and thus making our model more telling.
@@ -871,16 +884,13 @@ Some other variables that are interesting:
 -   If the user is a member(`mem`)
 
 -   Location of the bixi station compared to Parc Lafontaine, a landmark
-    in the middle of the bixi station system (`North_South`) and
-    (`West_East`)
+    in the middle of the bixi station system (`cardinality`)
 
 -   Proportion of trips in the morning versus the whole day
     (`percent_AM`)
 
 -   If the station name contains the word 'metro' (`Metro_ind`)
 
--   If we are at the beginning of month(before the 15th) or the end of
-    the month (`PartOfMonth`)
 
 **Interactions**: In our EDA we observed a different week day usage of
 the member and non members, thus an interaction term between members and
@@ -898,27 +908,61 @@ cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
 We see very low correlation between the Xs which means we should not get
 any problems with collinearity between our numerical variables.
 
-After the assumptions verification we chose to exclude `n_tot` : VERIFY
 
-```{r , echo=FALSE, fig.width=4, fig.height=3}
-plot(df_main$n_tot, df_main$avg)  
-```
-
-The variable total number of trip (`n_tot`) has been removed from the
-regression because it did not pass the assumption of constant variance,
-making the model not correctly specified. This makes intuitive sense
-since as the number of trip increases, the average trip duration should
-converge towards the true mean.
 
 ## Model
 
-INTERACTIO AND QUADRANT
+head(df_main)
+
+df_main %>%
+  count(station, sort = TRUE)
+
+Benchmark model
 
 ```{r , echo=FALSE}
-model_AvgDur <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + North_South + West_East + percent_AM + PartOfMonth + Metro_ind, data = df_main)
-summary(model_AvgDur)
+model_AvgDur_0 <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, data = df_main)
+summary(model_AvgDur_0)
 ```
 
+Model with unstructured covariance matrix
+
+```{r , echo=FALSE}
+start_date = min(df_main$date)
+df_main$day_num = as.integer(df_main$date - start_date)
+
+
+model_AvgDur_1 <- gls(avg ~ season + temp + rain + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation= corSymm(form=~1|station), weights = varIdent(form = ~1 | day_num), data = df_main)
+summary(model_AvgDur_1)
+
+
+
+
+
+model_arh1 <- gls(avg ~ season + temp + rain+ day_num + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation = corAR1(form = ~ day_num | station), data = df_main)
+
+
+mod1 <- gls(avg ~ season + temp + rain+ day_num + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation = corCompSymm(form = ~1 |
+station), data = df_main)
+summary(mod1)
+
+
+getVarCov(mod1, individual = 2)
+
+
+mod2 <- gls(avg ~ season + temp + rain+ day_num + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation = corAR1(form = ~day_num |station/mem), data = df_main)
+summary(mod2)
+
+getVarCov(mod2, individual = 1)
+
+
+df_main %>%
+  group_by(station, dd,mm,mem) %>%
+  summarise(n = n()) %>%
+  filter(n > 1) 
+
+df_main[(df_main$dd == 8) & (df_main$mm== 5)& (df_main$station == 21),]
+
+```
 ## Interpretation
 
 **Overall Model** - The model explains approximately 10% of the
