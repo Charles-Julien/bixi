@@ -38,13 +38,16 @@ library(sf)
 library(lmerTest)
 ```
 
+```{r wd, include=FALSE}
+# Set working directory to file location
+
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+```
 
 ```{r load_data, include=FALSE}
 # Data loading
 
-# Set working directory to file location
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 df_raw = read.csv("./../src/bixi10.csv")
 df_station = read.csv("./../src/2021_stations.csv")
 
@@ -851,212 +854,156 @@ contribute to environmental goals by reducing reliance on motorized
 transportation. \# Research Question 3: What variables impact the
 average bixi trip duration?
 
-**The objective** is to identify the driving factors of a bixi's trip
-length when we control for most of the variables. Trip length is one of
-the three important variables that drives revenue, the other ones being
-the number of trips and the pricing scheme. Keep in mind that increasing
-the trip length does not necessarily increase revenues since an unwanted
-increase in trip length may discourage users from using bixi's system
-and result in a decrease in trip number.
+# Research question 3 : Environmental factors that impact non-members avg trip length
+
+**The objective** is to identify environmental factors that impact average trip length of non-members. As we know, non-members' revenue is generated from a fixed cost per trip and varying cost proportional to the duration of the trip. Hence, evaluating properly the effect of the environmental conditions on the average trip length of non-members is primordial.
 
 ## Variables Selection
 
-
-REMOVE PART OF MONTH Our goal is to incorporate most of the important
-variables in order to increase our chance of respecting the assumption
-of E(e)=0 and thus making our model more telling.
-
 Variables that make business sense to include:
-
-From our seasonality analysis we identified:
-
--   Season; grouping of months from april to november in their
-    respective season (`season`)
 
 -   Temperature in degrees celcius (`temp`)
 
 -   Rainfall in mm (`rain`)
 
-From our daily and weekly pattern analysis we identified:
-
 -   Part of the week i.e. weekend or weekday (`wknd_ind`)
-
--   If it is a holiday (`holiday`)
-
-Some other variables that are interesting:
-
--   If the user is a member(`mem`)
 
 -   Location of the bixi station compared to Parc Lafontaine, a landmark
     in the middle of the bixi station system (`cardinality`)
 
--   Proportion of trips in the morning versus the whole day
-    (`percent_AM`)
-
 -   If the station name contains the word 'metro' (`Metro_ind`)
 
+-   Season (`season`)
 
-**Interactions**: In our EDA we observed a different week day usage of
-the member and non members, thus an interaction term between members and
-day of week would be interesting. (`wday*mem`).
+## Data preparation
 
-**Correlation:**
+```{r , echo=TRUE}
+df_nomem <- df_main[df_main$mem == 0, ]
 
-Let's take a quick look at the correlation between our numerical
-variables to estimate the effect of collinearity.
-
-```{r , echo=FALSE}
-cor(df_main[c('avg', 'temp', 'rain', 'n_tot', 'percent_AM')])
+start_date = min(df_nomem$date)
+df_nomem$day_num = as.integer(df_nomem$date - start_date)
 ```
-
-We see very low correlation between the Xs which means we should not get
-any problems with collinearity between our numerical variables.
-
-
+We first filter the dataframe so that only non-members are included.
+Then we assigned a measure of distance in between observations of the same station. This distance is the number of days in between observations. These can vary from one station to another.
 
 ## Model
+We will now build a first reference model. This model is not valid as it does not take into consideration the correlation intra station. The result will yield higher level of confidence on the estimate of the coefficient. This model will be refered as model 0.
 
-head(df_main)
-
-df_main %>%
-  count(station, sort = TRUE)
-
-Benchmark model
-
-```{r , echo=FALSE}
-model_AvgDur_0 <- lm(avg ~ season + temp + rain + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, data = df_main)
-summary(model_AvgDur_0)
+```{r , echo=TRUE}
+mod0 <- gls(avg ~ temp + rain + wknd_ind + cardinality + Metro_ind + season, data = df_nomem)
 ```
 
-Model with unstructured covariance matrix
+We will procede to build a model that takes into consideration the structure of correlation of the errors. This way, intra station correlation will be captured. As we observe the same subject over time, auto-regressive structure is an appropriate choice. Also, knowing that time interval are not constant between observations, we will specify the time dimension.
 
-```{r , echo=FALSE}
-# start_date = min(df_main$date)
-# df_main$day_num = as.integer(df_main$date - start_date)
-# 
-# 
-# model_AvgDur_1 <- gls(avg ~ season + temp + rain + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation= corSymm(form=~1|station), weights = varIdent(form = ~1 | day_num), data = df_main)
-# summary(model_AvgDur_1)
-# 
-# 
-# 
-# 
-# 
-# model_arh1 <- gls(avg ~ season + temp + rain+ day_num + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation = corAR1(form = ~ day_num | station), data = df_main)
-# 
-# 
-# mod1 <- gls(avg ~ season + temp + rain+ day_num + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation = corCompSymm(form = ~1 |
-# station), data = df_main)
-# summary(mod1)
-# 
-# 
-# getVarCov(mod1, individual = 2)
-# 
-# 
-# mod2 <- gls(avg ~ season + temp + rain+ day_num + wknd_ind*mem + holiday  + cardinality + percent_AM  + Metro_ind, correlation = corAR1(form = ~day_num |station/mem), data = df_main)
-# summary(mod2)
-# 
-# getVarCov(mod2, individual = 1)
-# 
-# 
-# df_main %>%
-#   group_by(station, dd,mm,mem) %>%
-#   summarise(n = n()) %>%
-#   filter(n > 1) 
-# 
-# df_main[(df_main$dd == 8) & (df_main$mm== 5)& (df_main$station == 21),]
-# 
+```{r , echo=TRUE}
+mod1 <- gls(avg ~ temp + rain + wknd_ind + cardinality + Metro_ind + season, correlation = corAR1(form = ~day_num|station), data = df_nomem)
 ```
 
-## Interpretation
+As model 0 is nested in model 1, we will perform a lrt to compare both.
 
-**Overall Model** - The model explains approximately 10% of the
-variation in the average trip duration which means that other factors
-are also at play and are not included in the model. The p value
-associated with the F-statistic is very low, hence our model is globally
-significant.
 
-**Intercept** : The interpretation of the intercept does not make sense
-in this case
+```{r , echo=FALSE}
+anova(mod0, mod1)
+```
+The likelihood ratio tells us that the ordinary linear regression is not an adequate simplification of the model with AR1 structure, at a 5% confidence level. It is interesting to note that BIC criteria would have suggested using model 0.
+
+
+Let's look at the correlation structure that was estimated in our AR1 model.
+
+```{r , echo=FALSE}
+cov2cor(getVarCov(mod1, individual = 1))
+```
+
+We observe that the correlation is very small in between observations of the same station.
+
+Exploring the ARH1 structure would have been interesting, but computing limitation do not allow us to test for this, as the model takes too long to fit.
+
+Instead, we will jump right into models with random intercept. 
+
+```{r , echo=TRUE}
+mod2 <- lme(avg ~ temp + rain + wknd_ind + cardinality + Metro_ind + season, random = ~1 | station, data = df_nomem)
+```
+
+Let's compare this model with the null model.
+
+```{r , echo=FALSE}
+anova(mod0, mod2)
+```
+We observe that the null model is not a adequate simplificaiton of the random intercept model.
+
+Let's continue by combining the random intercept and the error with auto regressive structure.
+
+```{r , echo=TRUE}
+mod3 <- lme(avg ~ temp + rain + wknd_ind + cardinality + Metro_ind + season, random = ~1 |
+station, correlation = corAR1(form = ~day_num | station), data = df_nomem)
+```
+
+```{r , echo=FALSE}
+anova(mod0, mod3)
+```
+Here again, We observe that the null model is not a adequate simplificaiton of the random intercept model plus the AR1 covariance structure on the errors.
+
+Furthermore, as all the models fitted so far have the same fixed effect, it is possible to compare them using AIC and BIC obtained from the REML method.
+
+```{r , echo=FALSE}
+anova(mod0,mod1,mod2,mod3)
+```
+
+According to both AIC and BIC, the best model would be model 2 which is the one using only random intercept. This may indicate that the auto-regressive structure was not performing so well.
+
+Let's print the necessary information for interpretation:
+
+```{r , echo=FALSE}
+summary(mod2)
+```
+
+```{r , echo=FALSE, warning=FALSE}
+Anova(mod2)
+```
+
+
+```{r , echo=FALSE}
+vcid1 = getVarCov(mod2, individual = 2, type = "marginal")
+```
+
+Correlation of individual 1:
+```{r , echo=FALSE}
+cov2cor(as.matrix(vcid1[[1]]))
+```
+We observe that these structure ressembles a lot that of a compound symmetric.
+
+## Interpretation of model with random intercept
+
+**Overall Model** - The model was fit using the rectified maxmimum likelihood method. It had an AIC of 32181 and BIC of 32259. It was found to be the best model according to these criteria. The random intercept standard deviation is of 2.7 quite an important variation relative to the fixed part of the intercept (12.97). We see that the model identified 747 groups aka stations in the dataset and a total of 4734 obsevations. Hence there would be on average 4734/747 =6.33 observations of each station of non-members.
+
+**Intercept** : The intercept can be interpeted as the expected average trip duration of non-members in the specific case where temperature is 0, there is no rain, it is a weekday, the trip departure is in the north-east of parc lafontaine, the station is not near a metro and the season is fall. In this case, we expect trip to be on average 12.97 minutes long.
 
 **Season**: The reference level is fall. We can see that on average trip
-duration during spring and summer are respectively 2.7 and 0.5 minutes
+duration during spring and summer are respectively 3.9 and 0.8 minutes
 longer than in fall holding everything else constant.
 
-**Temperature**: The coefficient of temperature is 0.11 which means that
+**Temperature**: The coefficient of temperature is 0.14 which means that
 an increase in temperature of 1 degree celcius corresponds to an
-increase of average trip duration of 0.11 minutes on average holding all
+increase of average trip duration of 0.14 minutes on average holding all
 else constant.
 
-**Rainfall**: The coefficient for rain is -0.1 which means that an
+**Rainfall**: The coefficient for rain is -0.09 which means that an
 increase in rainfall of 1 mm corresponds to a decrease of average trip
-duration of 0.1 minutes on average holding all else constant.
+duration of 0.09 minutes on average holding all else constant.
 
-**Effect of Weekend Indicator and membership**: Since there exists an
-interaction between both variables, it is no longer possible to
-interpret one without the other. This implies that the relation between
-average trip duration and membership is different depending on the
-moment of the week. The opposite is also true, the relation between
-average trip duration and the moment of the week is different depending
-on the membership status. We observe that non-member have longer trips
-on average and that weekend trips tends to increase average trip length.
+**Cardinality**: Their coefficients can be interpreted as the change in expected average trip duration compared to the reference departure point of north-east when all other variables are held constant. The effect of this variable is not deemed significant according to the analysis of deviance for a 5% confidence level.
 
-The 4 different levels in order of trip length are as follows: EXPLAIN
-IN WORDS 1. Lowest level : Weekday and member (-1.84 minutes)
-
-2.  Second lowest : Weekend and member (2.5-1.8-1.5 = -0.8 minutes)
-
-3.  Reference level: Weekday and non-member (0 minutes)
-
-4.  Highest level : weekend and non-member (+2.47 minutes)
-
-**Holiday**: The coefficient for holiday is 1.06 which means that during
-holidays average trip duration is 1.06 minutes higher on average than
-during non-holidays, holding all else constant.
-
-**North_South and West_East**: Their coefficients are 0.08 and -0.26
-which means that on average the average trip duration for trips starting
-at a station South of Parc Lafontaine or West is 0.08 and -0.26 minutes
-different from their counter parts respectively, holding all else
-constant. Keep in mind that the coefficient for North_South is not
-significantly different from zero
-
-**Percent AM**: The magnitude of the coefficient -2.03 is less important
-than its sign for our interpretation. What it means is that as the
-proportion of trips in the morning increases, the average trip duration
-generally decreases when holding all else constant. This hints that
-trips in the morning might be shorter on average than trip in the
-afternoon, hence bring in less revenue.
-
-**Part of Month** : The coefficient for part of month is -0.22 which
-means that on average, the average trip duration is 0.22 minutes shorter
-in the second half of the month holding all else constant. This feature
-was not found to be significantly different from zero.
-
-**Metro Indicator** : Metro indicator's coefficient is -0.75 which means
-that the expected value for average trip length decreases by 0.75
+**Metro Indicator** : Metro indicator's coefficient is -0.47 which means
+that the expected value for average trip length decreases by 0.47
 minutes when a bixi station is near a metro acces point, holding all
 else constant. This would suggest that user who rent bikes after making
-a metro ride are closer to their final destination than in other cases.
+a metro ride are closer to their final destination than in other cases. Although this effect is deemed no significative according to the analysis on deviance for a confidence level of 5%.
+
+**Weekend Indicator** : This coefficient means that during weekends, non-members are expected to have longer average trip length by 2.4 minutes when all other covariates are kept constant.
 
 ## Business Implications:
 
-1.  **Promotion and Marketing**: For the same temperature, average trip
-    length tends to be the longest in spring. This indicates that users
-    are eager to use bikes after winter. This insight could be used for
-    promotion purposes.
-
-2.  **Resource Allocation**: Expect longer trips when it is hot and
-    non-rainy outside. Even more if it is a weekend or holiday. Also,
-    bikes tend to be borrowed longer during the afternoon than in the
-    morning. Stations south of Parc Lafontaine have on average longer
-    trip duration, which may suggests that stations are further from one
-    another. There might be some space for additional stations.
-
-3.  **Pricing Strategy**: The usage that is associated with the longest
-    trip length based on our interaction term is for non-members during
-    the weekend. Charging a heftier price for these people at that time
-    may increase profit margins significantly.
+What we uncoverd is that given a season, temperature increases promotes longer trip for non-members. This will in turn generate more revenue and increase the demand on the bixi system. Also, rainfall as the exact opposite effect. Furthermore, weekend will generally imply significantly longer trips. Finaly, the usage during the spring season seems to be quite different than in other seasons as the coefficient for that specific month is quite higher and that for a constant temperature.
 
 ## Verification of assumptions and collinearity
 
@@ -1066,7 +1013,7 @@ Let's use the variance inflation factor to verify for collinearity, we
 will use a standard threshold of 5.
 
 ```{r , echo=FALSE}
-# vif(model_AvgDur)
+vif(mod2)
 ```
 
 No major problem is detected, since the global vifs are all relatively
@@ -1075,68 +1022,49 @@ low.
 ### Verification of Normality of Residuals
 
 ```{r, echo=FALSE, fig.width=4, fig.height=3}
-# #pin=c(2,2)
-# res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residuals")
-# 
+res = hist(mod2$residuals, main="Histogram of Residuals", xlab="Residuals")
+
 ```
 
-No problem here, residuals are normally distributed.
+We observe a slightly longer tail on the right, but noting alarming.
 
 ### Model correctly specified
 
 ```{r , echo=FALSE, fig.width=4.5, fig.height=3.5}
-# plot(predict(model_AvgDur), resid(model_AvgDur)) 
+plot(predict(mod2), resid(mod2)) 
 ```
 
-The model seems to be correctly specified.
+There may be some evidance of small heteroscedasticity in this plot.
 
 ### Verificaiton of Heteroscedasticity
 
 ```{r , echo=FALSE}
 
-# residuals_df <- data.frame(df_main, residuals = residuals(model_AvgDur))
-# 
-# p1 <- ggplot(data = residuals_df, aes(x = temp, y = residuals)) +
-#   geom_point() +
-#   labs(x = "temp", y = "Residuals")
-# 
-# p2 <- ggplot(data = residuals_df, aes(x = rain, y = residuals)) +
-#   geom_point() +
-#   labs(x = "rain", y = "Residuals")
-# 
-# p3 <- ggplot(data = residuals_df, aes(x = n_tot, y = residuals)) +
-#   geom_point() +
-#   labs(x = "n_tot", y = "Residuals")
-# 
-# p4 <- ggplot(data = residuals_df, aes(x = percent_AM, y = residuals)) +
-#   geom_point() +
-#   labs(x = "percent_AM", y = "Residuals")
-# 
-# p5 <- ggplot(data = residuals_df, aes(x = season, y = residuals)) + geom_boxplot() +
-#   labs(x = "season", y = "Residuals")
-# 
-# p6 <- ggplot(data = residuals_df, aes(x = mem, y = residuals)) + geom_boxplot() +
-#   labs(x = "mem", y = "Residuals")
-# 
-# p7 <- ggplot(data = residuals_df, aes(x = holiday, y = residuals)) + geom_boxplot() +
-#   labs(x = "holiday", y = "Residuals")
-# 
-# p8 <- ggplot(data = residuals_df, aes(x = North_South, y = residuals)) + geom_boxplot() +
-#   labs(x = "North_South", y = "Residuals")
-# 
-# p9 <- ggplot(data = residuals_df, aes(x = West_East, y = residuals)) + geom_boxplot() +
-#   labs(x = "West_East", y = "Residuals")
-# 
-# p10 <- ggplot(data = residuals_df, aes(x = PartOfMonth, y = residuals)) + geom_boxplot() + labs(x = "PartOfMonth", y = "Residuals")
-# 
-# p11 <- ggplot(data = residuals_df, aes(x = Metro_ind, y = residuals)) + geom_boxplot() + labs(x = "Metro_ind", y = "Residuals")
-# 
-# grid.arrange(p1, p2, p4, p5, p6, p7, p8, p9, p10, p11, ncol=3)
+residuals_df <- data.frame(df_nomem, residuals = residuals(mod2))
+
+p1 <- ggplot(data = residuals_df, aes(x = temp, y = residuals)) +
+  geom_point() +
+  labs(x = "temp", y = "Residuals")
+
+p2 <- ggplot(data = residuals_df, aes(x = rain, y = residuals)) +
+  geom_point() +
+  labs(x = "rain", y = "Residuals")
+
+
+p3 <- ggplot(data = residuals_df, aes(x = season, y = residuals)) + geom_boxplot() +
+  labs(x = "season", y = "Residuals")
+
+
+p4 <- ggplot(data = residuals_df, aes(x = wknd_ind, y = residuals)) + geom_boxplot() +
+  labs(x = "wknd_ind", y = "Residuals")
+
+
+grid.arrange(p1, p2,p3, p4, ncol=2)
 
 ```
 
-No major problem of heteroscedasticity were detected. The variable
-`n_tot` has been removed as stated earlier.
+No major problem of heteroscedasticity were detected except some slightly higher variance where there is no rain.
+
 
 # Limitations and shortcomings
 
