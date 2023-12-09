@@ -231,7 +231,7 @@ seasonal_effect_rev_model <- lm(rev ~ mm + temp + rain + mem, data = df_main)
 summary(seasonal_effect_rev_model)
 ```
 
-## Model Linear Mixed model (ATUL)
+## Model Linear Mixed model
 
 Comment: compound symmetric correlation structure is not ideal for time
 series if I am not mistaken
@@ -245,11 +245,11 @@ summary(seasonal_effect_rev_gls)
 
 ```{r}
 # CHIKE: Note that using compound symmetric gives the same covariance to each observation
-cov.matrix = getVarCov(seasonal_effect_rev_gls,individual = 1)
+cov.matrix = getVarCov(seasonal_effect_rev_gls,individual = 4)
 cov2cor(cov.matrix)
 ```
 
-```{r}
+```{r, fig.height=3, fig.width=3, echo=FALSE}
 coefficients_and_pvalues <- coef(summary(seasonal_effect_rev_gls))
 print(coefficients_and_pvalues)
 
@@ -394,7 +394,7 @@ seasonal_effect_rev.ar <- gls(rev ~ temp + rain + mm + mem, correlation = corAR1
 
 
 ```{r}
-getVarCov(seasonal_effect_rev.ar,individual = 1)
+getVarCov(seasonal_effect_rev.ar,individual = 4)
 ```
 As expected with an auto-regressive correlation structure, the further
 back the time period, the lower the correlation.
@@ -420,10 +420,11 @@ isTRUE(all.equal(coef(seasonal_effect_rev_model), fixef(seasonal_effect_rev.rand
 getVarCov(seasonal_effect_rev.rand_int, type = "random.effects")
 ```
 
-```{r}
-getVarCov(seasonal_effect_rev.rand_int, individual = 1, type = "conditional")
+```{r, echo=FALSE}
+#This is the same as looking at the variance of the error term
+
+#getVarCov(seasonal_effect_rev.rand_int, individual = 1, type = "conditional")
 ```
-This is the same as looking at the variance of the error term
 
 ```{r}
 seasonal_effect_rev.ar_rand_int <- lme(rev ~ temp + rain + mm + mem, random = ~1 |
@@ -460,7 +461,7 @@ summary_season_rev.base$type = 'Base'
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 summary_season_rev.ar = as.data.frame(summary(seasonal_effect_rev.ar)$tTable)
 summary_season_rev.ar$type = 'Autoregressive'
 #summary_season_rev.ar[,c('DF')] <- NA
@@ -486,7 +487,7 @@ cols = intersect(colnames(summary_season_rev.rand_coef),cols)
 
 season_summary_combined = rbind(summary_season_rev.rand_coef[, cols], summary_season_rev.ar_rand_int[, cols],summary_season_rev.rand_int[, cols],summary_season_rev.ar[, cols],summary_season_rev.base[, cols])
 season_summary_combined$significance <- ifelse(season_summary_combined$`p-value`<0.05, 'Significant Feature', 'Not Significant')
-season_summary_combined
+#season_summary_combined
 ```
 Using a 5% significance threshold, we can conclude that each of the covariates used to predict revenue had a significant impact.
 ```{r}
@@ -699,7 +700,9 @@ anova(time_pattern_dur_model_mixed, null_model)
 
 ## Assumptions
 
-```{r}
+```{r, fig.width=6, fig.height=6, echo=FALSE}
+
+par(mfrow = c(2, 2))
 # Using lmer model
 residuals <- residuals(time_pattern_dur_model_mixed)
 
@@ -716,20 +719,22 @@ abline(h=0, col="red")
 
 # For non-time series data
 plot(residuals, type="l")
-
-# For time series data
-acf(residuals)
-
-vif(time_pattern_dur_model_mixed)  # Note: This works if 'model' is an 'lm' object; for 'lmer' objects, you might need to adapt.
-
-ranef_plot <- ranef(time_pattern_dur_model_mixed)
-plot(ranef_plot)
-
-predicted_values <- predict(time_pattern_dur_model_mixed)
-plot(df_main$dur, predicted_values)
-abline(0, 1)
- 
 ```
+
+
+```{r, echo=FALSE}
+# # For time series data
+# acf(residuals)
+# 
+# ranef_plot <- ranef(time_pattern_dur_model_mixed)
+# plot(ranef_plot)
+# 
+# predicted_values <- predict(time_pattern_dur_model_mixed)
+# plot(df_main$dur, predicted_values)
+# abline(0, 1)
+
+```
+
 
 **Histogram of Residuals** The histogram shows the distribution of
 residuals. It suggests that the residuals are fairly symmetrically
@@ -1007,19 +1012,7 @@ a metro ride are closer to their final destination than in other cases. Although
 
 What we uncoverd is that given a season, temperature increases promotes longer trip for non-members. This will in turn generate more revenue and increase the demand on the bixi system. Also, rainfall as the exact opposite effect. Furthermore, weekend will generally imply significantly longer trips. Finaly, the usage during the spring season seems to be quite different than in other seasons as the coefficient for that specific month is quite higher and that for a constant temperature.
 
-## Verification of assumptions and collinearity
-
-### Variance Inflation Factor
-
-Let's use the variance inflation factor to verify for collinearity, we
-will use a standard threshold of 5.
-
-```{r , echo=FALSE}
-vif(mod2)
-```
-
-No major problem is detected, since the global vifs are all relatively
-low.
+## Verification of assumptions
 
 ### Verification of Normality of Residuals and model correctly specified
 
