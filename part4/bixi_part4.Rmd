@@ -882,9 +882,11 @@ df_nomem <- df_main[df_main$mem == 0, ]
 
 start_date = min(df_nomem$date)
 df_nomem$day_num = as.integer(df_nomem$date - start_date)
+
+df_nomem =df_nomem[order(df_nomem$date),]
 ```
 We first filter the dataframe so that only non-members are included.
-Then we assigned a measure of distance in between observations of the same station. This distance is the number of days in between observations. These can vary from one station to another.
+Then we assigned a measure of distance in between observations of the same station. This distance is the number of days in between observations. These can vary from one station to another. Finally we ordered the dataset with dates ascending. This way,observation in auto regressive structure will be in the correct order.
 
 ## Model
 We will now build a first reference model. This model is not valid as it does not take into consideration the correlation intra station. The result will yield higher level of confidence on the estimate of the coefficient. This model will be refered as model 0.
@@ -911,7 +913,7 @@ The likelihood ratio tells us that the ordinary linear regression is not an adeq
 Let's look at the correlation structure that was estimated in our AR1 model.
 
 ```{r , echo=FALSE}
-cov2cor(getVarCov(mod1, individual = 1))
+cov2cor(getVarCov(mod1, individual = 3))
 ```
 
 We observe that the correlation is very small in between observations of the same station.
@@ -924,7 +926,7 @@ Instead, we will jump right into models with random intercept.
 mod2 <- lme(avg ~ temp + rain + wknd_ind + cardinality + Metro_ind + season, random = ~1 | station, data = df_nomem)
 ```
 
-Let's compare this model with the null model.
+Let's compare this model with the simple linear regression model.
 
 ```{r , echo=FALSE}
 anova(mod0, mod2)
@@ -963,14 +965,14 @@ Anova(mod2)
 
 
 ```{r , echo=FALSE}
-vcid1 = getVarCov(mod2, individual = 2, type = "marginal")
+vcid1 = getVarCov(mod2, individual = 3, type = "marginal")
 ```
 
-Correlation of individual 1:
+Correlation of individual 3:
 ```{r , echo=FALSE}
 cov2cor(as.matrix(vcid1[[1]]))
 ```
-We observe that these structure ressembles a lot that of a compound symmetric.
+We observe that the marginal correlation structure ressembles a lot that of a compound symmetric.
 
 ## Interpretation of model with random intercept
 
@@ -1019,26 +1021,24 @@ vif(mod2)
 No major problem is detected, since the global vifs are all relatively
 low.
 
-### Verification of Normality of Residuals
+### Verification of Normality of Residuals and model correctly specified
 
-```{r, echo=FALSE, fig.width=4, fig.height=3}
-res = hist(mod2$residuals, main="Histogram of Residuals", xlab="Residuals")
+```{r, echo=FALSE, fig.width=6, fig.height=3}
+
+par(mfrow = c(1, 2))
+hist(mod2$residuals, main="Histogram of Residuals", xlab="Residuals")
+
+plot(predict(mod2), resid(mod2)) 
 
 ```
 
 We observe a slightly longer tail on the right, but noting alarming.
 
-### Model correctly specified
+There may be some evidences of small heteroscedasticity in the second plot.
 
-```{r , echo=FALSE, fig.width=4.5, fig.height=3.5}
-plot(predict(mod2), resid(mod2)) 
-```
+### Verification of Heteroscedasticity
 
-There may be some evidance of small heteroscedasticity in this plot.
-
-### Verificaiton of Heteroscedasticity
-
-```{r , echo=FALSE}
+```{r , echo=FALSE, fig.width=4, fig.height=3}
 
 residuals_df <- data.frame(df_nomem, residuals = residuals(mod2))
 
@@ -1068,61 +1068,33 @@ No major problem of heteroscedasticity were detected except some slightly higher
 
 # Limitations and shortcomings
 
+-   Presence of outliers in the dataset. These have impacted the fit of some of our         model and may resut in heteroscedasticity.
+
+-   Difficulty regarding having a proper measure of members revenue. Having a fixed cost     is hard to reflect in the revenue per day.
+
+-   The Dataset is already aggregated so getting proper individual measure is
+    quite challenging.
+
 -   Causation vs. Correlation: The regression model captures
     relationships but does not establish causation.
+    
 -   Data Exclusions: The data only considers trips under 60 minutes,
     which might exclude a segment of users who use BIXI for longer
     journeys.
--   Other External Factors: Events, road conditions, or public
-    transportation disruptions can affect BIXI usage but are not
-    captured in the dataset.
+
 
 # Conclusion
 
 In conclusion, several key operational and strategic considerations have
 emerged from the data analysis of BIXI bike rentals:
 
-Operational Adjustments: The data suggests that revenue is higher in
-warmer months. To capitalize on this, it is advisable to optimize
-operations during this period, which could involve increasing staffing,
-enhancing promotional activities, and ensuring optimal equipment
-availability.
-
-Rainy Day Strategies: Rainfall appears to have a negative impact on
-revenue. Implementing strategies to mitigate this effect, such as
-promotional offers or special activities for rainy days, may help
-attract more customers.
-
-Promotion and Marketing: Data indicates that average trip length is
-longest in spring, suggesting an eagerness to use bikes after winter.
-This insight can be leveraged for promotional purposes.
-
-Resource Allocation: Understanding patterns in trip duration based on
-weather, time of day, and location is crucial for resource allocation.
-Longer trips are expected during hot, non-rainy weekends and holidays.
-Stations in certain areas have longer trip durations, indicating
-potential for additional station placement.
-
-Pricing Strategy: The analysis highlights that non-members on weekends
-tend to take longer trips. Adjusting pricing for this group during these
-times could significantly increase profit margins.
-
-Operational Strategy: It's important to consider the tradeoff between
-the number of trips and average trip length. Increasing the number of
-trips on a given day may lead to shorter hauls. This information should
-inform operational decisions. Incorporating these insights into the
-business's operations and strategies can lead to improved efficiency,
-customer satisfaction, and profitability
 
 # Contribution
 
-Charles Julien :Research question 3, version control, part of feature
-engineering, formating.
+Charles Julien :Research question 3 and limitations
 
-Gabriel Jobert : Research question 1 and 2
+Gabriel Jobert :
 
-Chike Odenigbo: exploratory models (not included), feature engineering,
-influential observations, autocorrelation
+Chike Odenigbo: 
 
-Atul Sharma: Contributed in developing the Reseacrh questions,
-interpreting the findings of the model and finalising the conclusion .
+Atul Sharma: Introduction
