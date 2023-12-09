@@ -38,29 +38,6 @@ library(sf)
 library(lmerTest)
 ```
 
-# Instruction
-
-• Revisit the linear regression models explored in Part 2 of your
-project, this time allowing to capture the potential intra-station
-correlation. • Comment on findings and discuss the main takeaways from
-this analysis from a business perspective. Be sure to provide all
-relevant model outputs that support your discussion. • Discuss any
-shortcomings or limitations of the analyses carried out.
-
-# ```{r}
-# mypath <- getwd()
-# 
-# # The path of the parent directory:
-# root = dirname(mypath)
-# ```
-
-# ```{r}
-# #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-# 
-# # Set working directory to file location
-# df_raw = read.csv(file.path(root,'src',"bixi10.csv"))
-# df_station = read.csv(file.path(root,'src',"2021_stations.csv"))
-# ```
 
 ```{r load_data, include=FALSE}
 # Data loading
@@ -225,6 +202,17 @@ recommendations to support BIXI in continually improving its services.
 -   Research Question 3: What variables impact the average bixi trip
     duration?
 
+
+Before jumping in, let's perform a quick exploration of our data.
+```{r}
+df_explore = df_main %>%
+  group_by(station, mem) %>%
+  summarize(n = n())
+  
+summary(df_explore$n)
+```
+The unique identifier of a line in our dataset is a combination of the station, the date and the membership status. On average, a station for a given membership status appears 6 times in our dataset.
+
 # Research Question 1: How do seasonal factors impact trip revenue for BIXI Montréal?
 
 ADD INTERACTION TERM **Objective of Analysis:** This regression model is
@@ -367,30 +355,18 @@ positive impact on revenue.
 NEED A MORE COMPLETE ASSUPTION VALIDATION \### Normality of residuals
 
 ```{r echo=FALSE}
-par(mfrow=c(1,2), pin=c(2,2))  # 1 row, 2 columns
-seasonal_effect_rev_residual_qqplot = qqnorm(seasonal_effect_rev_model$residuals)
-qqline(seasonal_effect_rev_model$residuals)
-seasonal_effect_rev_residual_hist = hist(seasonal_effect_rev_model$residuals, main="Histogram of Residuals", xlab="Residuals")
+# par(mfrow=c(1,2), pin=c(2,2))  # 1 row, 2 columns
+# seasonal_effect_rev_residual_qqplot = qqnorm(seasonal_effect_rev_model$residuals)
+# qqline(seasonal_effect_rev_model$residuals)
+# seasonal_effect_rev_residual_hist = hist(seasonal_effect_rev_model$residuals, main="Histogram of Residuals", xlab="Residuals")
 
 ```
 
-1.  **Histogram of Residuals**: These histograms have a clear right-skew
-    with a peak close to zero and a long tail towards the right. This
-    suggests that most residuals are clustered around zero, but there
-    are a few larger positive residuals. This is an indication that the
-    normality assumption of the residuals may be violated.
+1.  **Histogram of Residuals**: 
 
-2.  **Normal Q-Q Plot**: Most of the points are close to the line, which
-    is a good sign. However, there's a clear deviation from the line on
-    the top right corner, suggesting the presence of larger residuals
-    that are not explained by a normal distribution. This reiterates the
-    presence of the right skew seen in these histograms.
+2.  **Normal Q-Q Plot**: 
 
-**Overall Interpretation**: The residuals are not perfectly normal. They
-show a positive skewness, indicating there might be some observations
-with higher residuals (perhaps outliers or instances where the model
-systematically underpredicts). The deviation from normality might not be
-a problem because the sample is large enough.
+**Overall Interpretation**: 
 
 ## Research Question 1: Autoregressive Structure (CHIKE)
 
@@ -415,16 +391,12 @@ seasonal_effect_rev.ar <- gls(rev ~ temp + rain + mm + mem, correlation = corAR1
 
 
 ```{r}
-getVarCov(seasonal_effect_rev.ar, type = "random.effects")
+getVarCov(seasonal_effect_rev.ar,individual = 1)
 ```
-
-
 As expected with an auto-regressive correlation structure, the further
 back the time period, the lower the correlation.
 
-```{r}
-getVarCov(seasonal_effect_rev.ar,individual = 1)
-```
+It is important to note that the time distance between these observations is not constant, in some cases, it can even be null. For example, when a station is observed on the same day for members and non-members. Having a covariance that considers the time between observation would be the best. (ARH1)
 
 ## Research Question 1: Random Intercept (CHIKE)
 
@@ -435,7 +407,6 @@ seasonal_effect_rev.rand_int <- lme(rev ~ temp + rain + mm + mem, random = ~ 1 |
 # Display model summary
 #summary(seasonal_effect_rev.rand_int)
 ```
-
 
 ```{r}
 # Expected to be True comparing fixed effects coefficients between base model and random effects model
@@ -449,6 +420,7 @@ getVarCov(seasonal_effect_rev.rand_int, type = "random.effects")
 ```{r}
 getVarCov(seasonal_effect_rev.rand_int, individual = 1, type = "conditional")
 ```
+This is the same as looking at the variance of the error term
 
 ```{r}
 seasonal_effect_rev.ar_rand_int <- lme(rev ~ temp + rain + mm + mem, random = ~1 |
@@ -462,13 +434,13 @@ getVarCov(seasonal_effect_rev.ar_rand_int, type = "random.effects")
 ```
 
 ```{r}
-AIC(seasonal_effect_rev.ar_rand_int, seasonal_effect_rev.ar)
+AIC(seasonal_effect_rev.ar, seasonal_effect_rev.rand_int, seasonal_effect_rev.ar_rand_int )
 ```
 
 ## Research Question 1: Random Slope (CHIKE)
 
 ```{r}
-#Doesnt make sense in this context to use random effects on the coefficient for temperature because temperature across montreal should be highly similar
+#Doesnt make sense in this context to use random effects on the coefficient for #temperature because temperature across montreal should be highly similar
 #Using rain random effect does not work
 seasonal_effect_rev.rand_coef <- lme(rev ~ temp + rain + mm + mem, random = ~1 + temp |
 station, data = df_main)
@@ -640,8 +612,11 @@ specified station.
 
 ## Model
 
-Model is missing^??
+```{r Time_pattern_trip_duration, echo=FALSE}
+time_pattern_dur_model_mixed <- lmer(dur ~ holiday + wknd_ind + wknd_ind*mem + (1|district/station), data=df_main)
+summary(time_pattern_dur_model_mixed)
 
+```
 The model explores the relationship between trip duration (`dur`) and
 factors like holidays (`holiday`), weekend indicator (`wknd_ind`),
 membership status (`mem`) and its interaction with weekend indicator,
@@ -699,13 +674,13 @@ influencing trip durations. - The model appears to be a good fit for the
 data, capturing key variability both within and between groups (stations
 and districts).
 
-# ```{r}
-# null_model <- lmer(dur ~ 1 + (1 | district/station), data = df_main)
-# 
-# # Compare full model to null model
-# anova(time_pattern_dur_model_mixed, null_model)
-# 
-# ```
+```{r}
+null_model <- lmer(dur ~ 1 + (1 | district/station), data = df_main)
+
+#Compare full model to null model (refitting using mle)
+anova(time_pattern_dur_model_mixed, null_model)
+
+```
 
 -   The significant Chi-square test (p \< 0.001) suggests that the fixed
     effects included in the full model (related to holidays, weekends,
@@ -721,37 +696,37 @@ and districts).
 
 ## Assumptions
 
-# ```{r}
-# # Using lmer model
-# residuals <- residuals(time_pattern_dur_model_mixed)
-# 
-# # Histogram
-# hist(residuals, breaks=30, main="Histogram of Residuals")
-# 
-# # Q-Q Plot
-# qqnorm(residuals)
-# qqline(residuals)
-# 
-# plot(fitted(time_pattern_dur_model_mixed), residuals, xlab="Fitted Values", ylab="Residuals")
-# abline(h=0, col="red")
-# 
-# 
-# # For non-time series data
-# plot(residuals, type="l")
-# 
-# # For time series data
-# acf(residuals)
-# 
-# vif(time_pattern_dur_model_mixed)  # Note: This works if 'model' is an 'lm' object; for 'lmer' objects, you might need to adapt.
-# 
-# ranef_plot <- ranef(time_pattern_dur_model_mixed)
-# plot(ranef_plot)
-# 
-# predicted_values <- predict(time_pattern_dur_model_mixed)
-# plot(df_main$dur, predicted_values)
-# abline(0, 1)
-# 
-# ```
+```{r}
+# Using lmer model
+residuals <- residuals(time_pattern_dur_model_mixed)
+
+# Histogram
+hist(residuals, breaks=30, main="Histogram of Residuals")
+
+# Q-Q Plot
+qqnorm(residuals)
+qqline(residuals)
+
+plot(fitted(time_pattern_dur_model_mixed), residuals, xlab="Fitted Values", ylab="Residuals")
+abline(h=0, col="red")
+
+
+# For non-time series data
+plot(residuals, type="l")
+
+# For time series data
+acf(residuals)
+
+vif(time_pattern_dur_model_mixed)  # Note: This works if 'model' is an 'lm' object; for 'lmer' objects, you might need to adapt.
+
+ranef_plot <- ranef(time_pattern_dur_model_mixed)
+plot(ranef_plot)
+
+predicted_values <- predict(time_pattern_dur_model_mixed)
+plot(df_main$dur, predicted_values)
+abline(0, 1)
+ 
+```
 
 **Histogram of Residuals** The histogram shows the distribution of
 residuals. It suggests that the residuals are fairly symmetrically
@@ -829,12 +804,14 @@ time_pattern_dur.ar <- gls(dur ~ dd + wday + holiday, correlation = corAR1(form 
 summary(time_pattern_dur.ar)
 ```
 
-# ```{r}
-# # holiday not working as random coefficient
+```{r}
+# holiday not working as random coefficient
 # time_pattern_dur.rand_coef <- lme(dur ~ dd + wday + holiday, random = ~1 + dd |
 # station, data = df_main)
 # summary(time_pattern_dur.rand_coef)
-# ```
+
+## Does not converges...
+```
 
 ## Business interpretation
 
@@ -953,7 +930,7 @@ summary(model_AvgDur_0)
 
 Model with unstructured covariance matrix
 
-# ```{r , echo=FALSE}
+```{r , echo=FALSE}
 # start_date = min(df_main$date)
 # df_main$day_num = as.integer(df_main$date - start_date)
 # 
@@ -989,7 +966,8 @@ Model with unstructured covariance matrix
 # 
 # df_main[(df_main$dd == 8) & (df_main$mm== 5)& (df_main$station == 21),]
 # 
-# ```
+```
+
 ## Interpretation
 
 **Overall Model** - The model explains approximately 10% of the
@@ -1087,28 +1065,28 @@ a metro ride are closer to their final destination than in other cases.
 Let's use the variance inflation factor to verify for collinearity, we
 will use a standard threshold of 5.
 
-# ```{r , echo=FALSE}
+```{r , echo=FALSE}
 # vif(model_AvgDur)
-# ```
+```
 
 No major problem is detected, since the global vifs are all relatively
 low.
 
 ### Verification of Normality of Residuals
 
-# ```{r, echo=FALSE, fig.width=4, fig.height=3}
+```{r, echo=FALSE, fig.width=4, fig.height=3}
 # #pin=c(2,2)
 # res = hist(model_AvgDur$residuals, main="Histogram of Residuals", xlab="Residuals")
 # 
-# ```
+```
 
 No problem here, residuals are normally distributed.
 
 ### Model correctly specified
 
-# ```{r , echo=FALSE, fig.width=4.5, fig.height=3.5}
+```{r , echo=FALSE, fig.width=4.5, fig.height=3.5}
 # plot(predict(model_AvgDur), resid(model_AvgDur)) 
-# ```
+```
 
 The model seems to be correctly specified.
 
