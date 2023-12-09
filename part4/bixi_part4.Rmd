@@ -474,7 +474,7 @@ AIC(seasonal_effect_rev.ar_rand_int, seasonal_effect_rev.ar)
 #Using rain random effect does not work
 seasonal_effect_rev.rand_coef <- lme(rev ~ temp + rain + mm + mem, random = ~1 + temp |
 station, data = df_main)
-summary(seasonal_effect_rev.rand_coef)
+#summary(seasonal_effect_rev.rand_coef)
 ```
 
 
@@ -515,12 +515,46 @@ season_summary_combined = rbind(summary_season_rev.rand_coef[, cols], summary_se
 season_summary_combined$significance <- ifelse(season_summary_combined$`p-value`<0.05, 'Significant Feature', 'Not Significant')
 season_summary_combined
 ```
-The Model estimates are similar despite different correlation structure.
+Using a 5% significance threshold, we can conclude that each of the covariates used to predict revenue had a significant impact.
+```{r}
+knitr::kable(season_summary_combined %>%
+  group_by(Covariates) %>%
+  summarise(significant = sum(significance == "Significant Feature"),
+            not_significant = sum(significance == "Not Significant")),caption = 'Feature Significance (5%)')
+```
+
+The Model estimates are similar despite different correlation structures. In this sense, we can see that the size and direction of each covariate is similar across each model.
+
 ```{r}
 ggplot(season_summary_combined, aes(fill=type, y=Value, x=Covariates)) + 
   geom_bar(colour="black",position='dodge', stat='identity')  + ggtitle ("Effect of LMMs on Coefficients") + theme_minimal () + theme(legend.position="bottom")
 ```
-Using AIC and BIC metrics, the model incorporating a random slope as well as the model incorporating an autoregressive correlation structure with a random intercept perform best when predicting revenue using season, membership and period data. It is also worth noting that the basic linear model that does not account for autocorrelation in the data fits the data the least optimally. 
+###Interpretation
+* Intercept: This is the average revenue when all values are set at 0. In our case, it would be that for non members, in the month of April, with no rain and temperature at 0 degrees, the expected revenue is roughly -($2,500) across all the models. This number is unrealistic as Bixi revenue is a strictly positive number. It would have been more interpretable if revenue was allowed to be a negative number by accounting for cost.
+
+* mem1: Members contribute roughly $6,000 in additional revenue for a given station compared to non-members holding other variables constant.
+
+* mm5: Rides in the month of May contribute about $1,200 in additional revenue for a given station compared to the month of April holding all other variables constant.
+
+* mm6: Rides in the month of June contribute about $1,250 in additional revenue for a given station compared to the month of April holding all other variables constant.
+
+* mm7: Rides in the month of July contribute about $1,280 in additional revenue for a given station compared to the month of April holding all other variables constant.
+
+* mm8: Rides in the month of August contribute about $1,250 in additional revenue for a given station compared to the month of April holding all other variables constant.
+
+* mm9: Rides in the month of May contribute about $2,200 in additional revenue for a given station compared to the month of April holding all other variables constant.
+
+* mm10: Rides in the month of May contribute about $1,000 in additional revenue for a given station compared to the month of April holding all other variables constant.
+
+* mm11: Rides in the month of May contribute about $700 in additional revenue for a given station compared to the month of April holding all other variables constant.
+
+* rain: A 1 unit increase in rain contributes to a $100 decrease in revenue for a given station holding all other variables constant.
+
+* temp: A 1 unit increase in temperature contributes to a $100 increase in revenue for a given station holding all other variables constant.
+
+
+
+Using AIC and BIC metrics, the model incorporating a random slope as well as the model incorporating an autoregressive correlation structure with a random intercept perform best when predicting revenue using season, membership and period data. This was assessed by the fact that they both have the lowest BIC and AIC metrics of all the models considered. It is also worth noting that the basic linear model that does not account for autocorrelation in the data fits the data the least optimally. 
 ```{r}
 performance.df <- data.frame("Type"=numeric(),"AIC"=numeric(),"BIC"=numeric(),"LL"=numeric())  
 performance.df[nrow(performance.df) + 1,] = c("Base",AIC(seasonal_effect_rev_model),BIC(seasonal_effect_rev_model),logLik(seasonal_effect_rev_model))
