@@ -615,22 +615,6 @@ improvement could be made :
     techniques to handle non-normality and heteroscedasticity.
 -   Investigating and potentially addressing outliers.
 
-```{r}
-time_pattern_dur.ar <- gls(dur ~ dd + wday + holiday, correlation = corAR1(form = ~ 1 | station), data = df_main)
-
-# Display model summary
-summary(time_pattern_dur.ar)
-```
-
-```{r}
-# holiday not working as random coefficient
-# time_pattern_dur.rand_coef <- lme(dur ~ dd + wday + holiday, random = ~1 + dd |
-# station, data = df_main)
-# summary(time_pattern_dur.rand_coef)
-
-## Does not converges...
-```
-
 ## Business interpretation
 
 From a business perspective, the findings from this analysis offer
@@ -869,35 +853,24 @@ grid.arrange(p1, p2,p3, p4, ncol=2)
 No major problem of heteroscedasticity were detected except some slightly higher variance where there is no rain.
 
 
-# Limitations and shortcomings
-
--   Presence of outliers in the dataset. These have impacted the fit of some of our         model and may resut in heteroscedasticity.
-
--   Difficulty regarding having a proper measure of members revenue. Having a fixed cost     is hard to reflect in the revenue per day.
-
--   The Dataset is already aggregated so getting proper individual measure is
-    quite challenging.
-
--   Causation vs. Correlation: The regression model captures
-    relationships but does not establish causation.
-    
--   Data Exclusions: The data only considers trips under 60 minutes,
-    which might exclude a segment of users who use BIXI for longer
-    journeys.
-
-
 # Conclusion
 
-In conclusion, several key operational and strategic considerations have
-emerged from the data analysis of BIXI bike rentals:
+In concluding the analysis of BIXI bike rentals, several key operational and strategic insights have emerged, offering a valuable perspective on user behaviors and rental patterns. This analysis has been instrumental in uncovering trends such as peak rental times, favored locations, and typical rental durations, which are crucial for optimizing bike availability and station maintenance. Additionally, the data provides a solid foundation for strategic planning, potentially guiding decisions on expansion, pricing strategies, and targeted marketing campaigns.
 
+However, the conclusions drawn must be contextualized within the constraints of the dataset and methodology. The presence of outliers in the data has the potential to skew the modeling results, indicating that some user behaviors may not conform to the general trends observed. This highlights the need for cautious interpretation, especially in predictive analytics. Furthermore, the challenge in accurately measuring members' revenue due to a fixed cost model suggests that financial analyses might not completely capture the economic impacts or profitability of the service.
+
+The aggregated nature of the dataset further limits the granularity of insights, restricting the ability to draw detailed conclusions about individual user behaviors and preferences. This aggregation necessitates a careful approach in extrapolating the data to broader contexts. Moreover, the distinction between causation and correlation observed in the regression models is critical. While the analysis identifies patterns and relationships, it does not establish causality, thus cautioning against definitive assertions about the reasons behind observed trends.
+
+Finally, the data's exclusion of trips longer than 60 minutes potentially overlooks a segment of the user base, which might lead to a misrepresentation of overall usage patterns and user needs.
+
+Overall, while the analysis of BIXI bike rentals yields significant insights for both operational efficiency and strategic development, these must be weighed against the limitations of the dataset and analytical approaches. A balanced consideration of these factors will enable a more nuanced and effective use of the data in enhancing the BIXI service.
 
 # Contribution
 
 Charles Julien :Research question 3 and limitations
 
-Gabriel Jobert :
+Gabriel Jobert : RQ 2 + conclusion
 
 Chike Odenigbo: Research Question 1
 
-Atul Sharma: Introduction
+Atul Sharma: Introduction + RQ1
